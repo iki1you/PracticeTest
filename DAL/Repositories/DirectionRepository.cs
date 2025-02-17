@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories
 {
-    public class DirectionRepository: ICRUDable<Direction>
+    public class DirectionRepository: ICRUDableRepository<Direction>, IDirectionRepository
     {
         private ApplicationContext _db;
 
@@ -23,7 +23,7 @@ namespace DAL.Repositories
             return _db.Directions;
         }
 
-        public Direction? Retrieve(Guid id)
+        public Direction? Retrieve(int id)
         {
             return _db.Directions.Find(id);
         }
@@ -39,7 +39,7 @@ namespace DAL.Repositories
             _db.SaveChanges();
         }
 
-        public Direction? Delete(Guid id)
+        public Direction? Delete(int id)
         {
             var direction = _db.Directions.Find(id);
             if (direction == null)

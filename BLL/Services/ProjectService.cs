@@ -20,12 +20,14 @@ namespace BLL.Services
 
         public void Create(ProjectDTO project)
         {
+            if (_projectRepository.GetAll().Any( x => x.Name == project.Name ))
+                throw new ArgumentException("Project exists");
             _projectRepository.Create(new Project {
                 Name = project.Name
             });
         }
 
-        public ProjectDTO Delete(Guid id)
+        public ProjectDTO Delete(int id)
         {
             var projectDto = Retrieve(id);
 
@@ -37,7 +39,7 @@ namespace BLL.Services
             return projectDto;
         }
 
-        public ProjectDTO Retrieve(Guid id)
+        public ProjectDTO Retrieve(int id)
         {
             var project = _projectRepository.Retrieve(id);
             if (project == null)
@@ -46,6 +48,7 @@ namespace BLL.Services
             {
                 Id = project.Id,
                 Name = project.Name,
+                TraineeCount = project.TraineeCount
             };
         }
 
@@ -54,12 +57,49 @@ namespace BLL.Services
             var project = _projectRepository.Retrieve(projectDto.Id);
             if (project == null)
                 throw new ArgumentNullException("Project doesn`t exist");
-            _projectRepository.Update(project);
+            _projectRepository.Update(new Project
+            {
+                Id = projectDto.Id,
+                Name = projectDto.Name,
+                TraineeCount = project.TraineeCount
+            });
         }
 
-        public IEnumerable<Project> GetAll()
+        public IEnumerable<ProjectDTO> GetAll()
         {
-            return _projectRepository.GetAll();
+            return _projectRepository.GetAll()
+                .Select(x => new ProjectDTO
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    TraineeCount = x.TraineeCount
+                });
+        }
+
+        public IEnumerable<ProjectDTO> GetSortedByTrainees(IEnumerable<ProjectDTO> projectDTOs, bool descending)
+        {
+            var sorted = projectDTOs.OrderBy(x => x.TraineeCount);
+            return descending ? sorted.Reverse() : sorted;
+        }
+
+        public IEnumerable<ProjectDTO> GetSortedByName(IEnumerable<ProjectDTO> projectDTOs, bool descending)
+        {
+            var sorted = projectDTOs.OrderBy(x => x.Name);
+            return descending ? sorted.Reverse() : sorted;
+        }
+
+        public IEnumerable<ProjectDTO> GetRangeProjects(IEnumerable<ProjectDTO> projectDTOs, int index, int size)
+        {
+            if (index < 0)
+                throw new ArgumentOutOfRangeException("index < 0");
+            return projectDTOs.Skip(index * size).Take(size);
+        }
+
+        public IEnumerable<ProjectDTO> FindByName(string name)
+        {
+            return _projectRepository.GetAll()
+                .Where(project => project.Name.Contains(name))
+                .Select(project => Retrieve(project.Id));
         }
     }
 }

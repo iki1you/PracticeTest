@@ -2,7 +2,7 @@
 
 namespace DAL.Interfaces
 {
-    public interface IProjectRepository: ICRUDable<Project>
+    public interface IProjectRepository: ICRUDableRepository<Project>
     {
     }
 }
