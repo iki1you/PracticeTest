@@ -2,7 +2,7 @@
 
 namespace DAL.Interfaces
 {
-    public interface IDirectionRepository: ICRUDableRepository<Direction>
+    public interface IDirectionRepository: ICRUDable<Direction>
     {
     }
 }

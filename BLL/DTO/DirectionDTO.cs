@@ -8,8 +8,7 @@ namespace BLL.DTO
 {
     public class DirectionDTO
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; }
-        public int TraineeCount { get; set; }
     }
 }

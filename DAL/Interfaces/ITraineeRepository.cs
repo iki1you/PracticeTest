@@ -2,7 +2,7 @@
 
 namespace DAL.Interfaces
 {
-    public interface ITraineeRepository: ICRUDableRepository<Trainee>
+    public interface ITraineeRepository: ICRUDable<Trainee>
     {
         public Trainee? Retrieve(string email);
     }

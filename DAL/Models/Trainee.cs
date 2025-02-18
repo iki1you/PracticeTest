@@ -8,9 +8,8 @@ namespace DAL.Models
     [Index(nameof(Email), IsUnique = true)]
     public class Trainee
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; }
-        public string Surname { get; set; }
         public Gender Gender { get; set; }
         public string Email { get; set; }
         public string? Phone { get; set; }

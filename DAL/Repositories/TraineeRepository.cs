@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories
 {
-    public class TraineeRepository : ITraineeRepository, ICRUDableRepository<Trainee>
+    public class TraineeRepository : ITraineeRepository, ICRUDable<Trainee>
     {
         private ApplicationContext _db;
 
@@ -24,7 +24,7 @@ namespace DAL.Repositories
             return _db.Trainees;
         }
 
-        public Trainee? Retrieve(int id)
+        public Trainee? Retrieve(Guid id)
         {
             return _db.Trainees.Find(id);
         }
@@ -44,7 +44,7 @@ namespace DAL.Repositories
             _db.SaveChanges();
         }
 
-        public Trainee? Delete(int id)
+        public Trainee? Delete(Guid id)
         {
             var trainee = _db.Trainees.Find(id);
             if (trainee == null)
