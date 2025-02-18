@@ -8,24 +8,14 @@ namespace BLL.DTO
 {
     public class TraineeDTO
     {
-        public int Id { get; set; }
-        [Required]
+        public Guid Id { get; set; }
         public string Name { get; set; }
-        [Required]
-        public string Surname { get; set; }
-        [Required]
         public Gender Gender { get; set; }
-        [Required]
-        [EmailAddress]
+        [Key]
         public string Email { get; set; }
-        [Phone]
-        [RegularExpression(@"\+7\d{10}", ErrorMessage = "Example: +71111111111")]
         public string? Phone { get; set; }
-        [Required]
-        public DateOnly BirthDay { get; set; }
-        [Required]
+        public DateTime BirthDay { get; set; }
         public DirectionDTO Direction { get; set; }
-        [Required]
         public ProjectDTO Project { get; set; }
     }
 }
