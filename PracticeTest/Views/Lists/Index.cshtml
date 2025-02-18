@@ -1,0 +1,73 @@
+﻿@using BLL.DTO
+@{
+    ViewData["Title"] = "Create trainee";
+}
+<p>@TempData["Message"]</p>
+
+<style>
+    .active {
+        background-color: aqua;
+    }
+</style>
+
+<div class="tab">
+    <button class="tablinks active" onclick="openCity(event, 'direction')">Направления</button>
+    <button class="tablinks" onclick="openCity(event, 'project')">Проекты</button>
+</div>
+
+<div id="direction" class="tabcontent" style="display: block">
+    <div>
+        @foreach (IGrouping<DirectionDTO, TraineeDTO> direction in ViewBag.TraineeDirections)
+        {
+            <p>Имя: @direction.Key.Name</p>
+            <p>Количество стажеров: @direction.Key.TraineeCount</p>
+            <label for="trainees">Стажеры: </label>
+            <div id="trainees">
+                <select name="trainee" id="trainee-select">
+                    @foreach (TraineeDTO trainee in direction)
+                    {
+                        <option value="@trainee.Id">@trainee.Name</option>
+                    }
+                </select>        
+            </div>      
+        }
+    </div>
+</div>
+
+<div id="project" class="tabcontent" style="display: none;">
+    <div>
+        @foreach (IGrouping<ProjectDTO, TraineeDTO> project in ViewBag.TraineeProjects)
+        {
+            <p>Имя: @project.Key.Name</p>
+            <p>Количество стажеров: @project.Key.TraineeCount</p>
+            <label for="trainees">Стажеры:</label>
+            <div id="trainees">
+                <select name="trainee" id="trainee-select">
+                    @foreach (TraineeDTO trainee in project)
+                    {
+                        <option value="@trainee.Id">@trainee.Name</option>
+                    }
+                </select>
+            </div>
+        }
+    </div>
+</div>
+
+
+@section scripts {
+    <script>
+        function openCity(evt, cityName) {
+          var i, tabcontent, tablinks;
+          tabcontent = document.getElementsByClassName("tabcontent");
+          for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+          }
+          tablinks = document.getElementsByClassName("tablinks");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+          document.getElementById(cityName).style.display = "block";
+          evt.currentTarget.className += " active";
+        }
+    </script>
+}

@@ -21,7 +21,7 @@ namespace DAL.Repositories
 
         public IEnumerable<Trainee> GetAll()
         {
-            return _db.Trainees;
+            return _db.Trainees.Include(x => x.Project).Include(x => x.Direction);
         }
 
         public Trainee? Retrieve(int id)
@@ -30,12 +30,16 @@ namespace DAL.Repositories
         }
         public Trainee? Retrieve(string email)
         {
-            return _db.Trainees.Find(email);
+            var trainee = _db.Trainees.Where(x => x.Email == email);
+            if (trainee.Count() == 0)
+                return null;
+            return trainee.First();
         }
 
         public void Create(Trainee trainee)
         {
             _db.Add(trainee);
+            _db.SaveChanges();
         }
 
         public void Update(Trainee trainee)

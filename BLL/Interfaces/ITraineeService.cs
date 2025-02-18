@@ -6,7 +6,14 @@ namespace BLL.Interfaces
     {
         public void AttachProject(TraineeDTO traineeDto, ProjectDTO projectDto);
         public void AttachDirection(TraineeDTO traineeDto, DirectionDTO directionDto);
-        public IEnumerable<TraineeDTO> GetByProjectId(int Id);
+        public IEnumerable<IGrouping<ProjectDTO, TraineeDTO>> GroupByProjects(
+            IEnumerable<TraineeDTO> traineesDto);
+        public IEnumerable<IGrouping<DirectionDTO, TraineeDTO>> GroupByDirections
+            (IEnumerable<TraineeDTO> traineesDto);
+        public IEnumerable<TraineeDTO> FilterByDirections(
+            IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<DirectionDTO> directions);
+        public IEnumerable<TraineeDTO> FilterByProjects(
+            IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<ProjectDTO> projects);
         public IEnumerable<TraineeDTO> GetByDirectionId(int Id);
     }
 }

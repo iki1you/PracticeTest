@@ -21,7 +21,7 @@ namespace BLL.Services
         public void Create(ProjectDTO project)
         {
             if (_projectRepository.GetAll().Any( x => x.Name == project.Name ))
-                throw new ArgumentException("Project exists");
+                throw new ArgumentException("Проект с таким именем существует");
             _projectRepository.Create(new Project {
                 Name = project.Name
             });
@@ -33,7 +33,7 @@ namespace BLL.Services
 
             var trainees = _traineeRepository.GetAll().Where(x => x.Project.Id == id);
             if (trainees.Any())
-                throw new ArgumentException($"You can't delete, {trainees} subscribes to this project");
+                throw new ArgumentException($"Нельзя удалить, {trainees} подписаны на этот проект");
 
             _projectRepository.Delete(id);
             return projectDto;
@@ -43,7 +43,7 @@ namespace BLL.Services
         {
             var project = _projectRepository.Retrieve(id);
             if (project == null)
-                throw new ArgumentNullException("Project doesn`t exist");
+                throw new ArgumentNullException("Такого проекта не существует");
             return new ProjectDTO
             {
                 Id = project.Id,
@@ -56,7 +56,7 @@ namespace BLL.Services
         {
             var project = _projectRepository.Retrieve(projectDto.Id);
             if (project == null)
-                throw new ArgumentNullException("Project doesn`t exist");
+                throw new ArgumentNullException("Такого проекта не существует");
             _projectRepository.Update(new Project
             {
                 Id = projectDto.Id,
@@ -95,9 +95,9 @@ namespace BLL.Services
             return projectDTOs.Skip(index * size).Take(size);
         }
 
-        public IEnumerable<ProjectDTO> FindByName(string name)
+        public IEnumerable<ProjectDTO> FindByName(IEnumerable<ProjectDTO> projects, string name)
         {
-            return _projectRepository.GetAll()
+            return projects
                 .Where(project => project.Name.Contains(name))
                 .Select(project => Retrieve(project.Id));
         }

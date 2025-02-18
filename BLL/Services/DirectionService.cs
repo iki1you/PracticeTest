@@ -20,7 +20,7 @@ namespace BLL.Services
         public void Create(DirectionDTO direction)
         {
             if (_directionRepository.GetAll().Any(x => x.Name == direction.Name))
-                throw new ArgumentException("Direction exists");
+                throw new ArgumentException("Такое направление уже существует");
             _directionRepository.Create(new Direction
             {
                 Name = direction.Name
@@ -33,7 +33,7 @@ namespace BLL.Services
 
             var trainees = _traineeRepository.GetAll().Where(x => x.Direction.Id == id);
             if (trainees.Any())
-                throw new ArgumentException($"You can't delete, {trainees} subscribes to this direction");
+                throw new ArgumentException($"Нельзя удалить, {trainees} подписаны на направление");
 
             _directionRepository.Delete(id);
             return directionDto;
@@ -43,7 +43,7 @@ namespace BLL.Services
         {
             var direction = _directionRepository.Retrieve(id);
             if (direction == null)
-                throw new ArgumentNullException("Direction doesn`t exist");
+                throw new ArgumentNullException("Такое направление не существует");
             return new DirectionDTO
             {
                 Id = direction.Id,
@@ -56,7 +56,7 @@ namespace BLL.Services
         {
             var direction = _directionRepository.Retrieve(directionDto.Id);
             if (direction == null)
-                throw new ArgumentNullException("Direction doesn`t exist");
+                throw new ArgumentNullException("Такое направление не существует");
             _directionRepository.Update(new Direction
             {
                 Id = directionDto.Id,
@@ -95,9 +95,9 @@ namespace BLL.Services
             return directionDTOs.Skip(index * size).Take(size);
         }
 
-        public IEnumerable<DirectionDTO> FindByName(string name)
+        public IEnumerable<DirectionDTO> FindByName(IEnumerable<DirectionDTO> directions, string name)
         {
-            return _directionRepository.GetAll()
+            return directions
                 .Where(direction => direction.Name.Contains(name))
                 .Select(direction => Retrieve(direction.Id));
         }

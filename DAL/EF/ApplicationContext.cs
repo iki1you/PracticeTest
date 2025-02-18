@@ -15,14 +15,5 @@ namespace DAL.EF
         {
             
         }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<Trainee>().ToTable("Trainee");
-            modelBuilder.Entity<Project>().ToTable("Project");
-            modelBuilder.Entity<Direction>().ToTable("Direction");
-        }
     }
 }

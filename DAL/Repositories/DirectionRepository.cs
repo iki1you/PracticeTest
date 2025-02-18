@@ -20,7 +20,7 @@ namespace DAL.Repositories
 
         public IEnumerable<Direction> GetAll()
         {
-            return _db.Directions;
+            return _db.Directions.ToList();
         }
 
         public Direction? Retrieve(int id)
@@ -31,6 +31,7 @@ namespace DAL.Repositories
         public void Create(Direction direction)
         {
             _db.Add(direction);
+            _db.SaveChanges();
         }
 
         public void Update(Direction direction)

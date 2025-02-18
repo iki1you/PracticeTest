@@ -1,9 +1,8 @@
-﻿using BLL.DTO;
-using BLL.Interfaces;
+﻿using BLL.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using PracticeTest.Controllers;
-using System.ComponentModel;
+using WebApi.Models;
 
 namespace WebApi.Controllers
 {
@@ -30,43 +29,65 @@ namespace WebApi.Controllers
         [Route("/create")]
         public ActionResult Create()
         {
-            ViewBag.Projects = new SelectList(_projectService.GetAll());
-            ViewBag.Directions = new SelectList(_directionService.GetAll());
+            ViewBag.Projects = new SelectList(_projectService.GetAll(), "Id", "Name");
+            ViewBag.Directions = new SelectList(_directionService.GetAll(), "Id", "Name");
             return View();
         }
 
         [HttpPost]
-        [Route("/create")]
-        public ActionResult Create(TraineeDTO traineeDto)
+        public IActionResult CreateProject(CreateViewModel model)
         {
-            string message = "Форма успешно отправлена";
-            if (!ModelState.IsValid)
+            if (model.Project != null)
             {
-                _logger.LogError(ModelState.ValidationState.ToString());
-                ViewData["Message"] = "Невалидная форма";
-                return View("Create");
+                try
+                {
+                    _projectService.Create(model.Project);
+                    TempData["Message"] = "Проект создан";
+                }
+                catch (Exception ex)
+                {
+                    TempData["Message"] = ex.Data;
+                }
+            }     
+            return RedirectToAction("Create");
+        }
+
+        [HttpPost]
+        public IActionResult CreateDirection(CreateViewModel model)
+        {
+            if (model.Direction != null)
+            {
+                try
+                {
+                    _directionService.Create(model.Direction);
+                    TempData["Message"] = "Направление создано";
+                }
+                catch (Exception ex)
+                {
+                    TempData["Message"] = ex.Message;
+                }
             }
+            return RedirectToAction("Create");
+        }
+
+        [HttpPost]
+        [Route("/create")]
+        public ActionResult Create(CreateViewModel model)
+        {
+            var traineeDto = model.Trainee;
+            traineeDto.Project = model.Project;
+            traineeDto.Direction = model.Direction;
+            string message = "Форма успешно отправлена";
             try
             {
                 _traineeService.Create(traineeDto);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                message = e.Message;
+                message = ex.Message;
             }
-            Console.WriteLine(message);
-
-            return RedirectToAction("Create", (object)message);
-        }
-
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        public ActionResult Delete(int id)
-        {
-            return View();
+            TempData["Message"] = message;
+            return RedirectToAction("Create");
         }
     }
 }

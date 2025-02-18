@@ -1,47 +1,72 @@
-﻿@model BLL.DTO.TraineeDTO
+﻿@model WebApi.Models.CreateViewModel
 
 @{
     ViewData["Title"] = "Create trainee";
 }
-<h3>@ViewData["Message"]</h3>
+<p>@TempData["Message"]</p>
 
-
-<form method="post" asp-action="Create" asp-controller="Trainee">
+<h2>Создать проект</h2>
+<form asp-action="CreateProject" asp-controller="Trainee" method="post">
+    <input asp-for="Project.Name" placeholder="Название проекта" required />
+    <button type="submit" class="btn btn-primary mt-2">Добавить проект</button>
+</form>
+<br />
+<form asp-action="CreateDirection" asp-controller="Trainee" method="post">
+    <input asp-for="Direction.Name" placeholder="Название направления" required />
+    <button type="submit" class="btn btn-primary mt-2">Добавить направление</button>
+</form>
+<br />
+<form method="post" asp-action="Create" asp-controller="Trainee" asp-antiforgery="true">
     <div>
+        <div class="validation" asp-validation-summary="ModelOnly"></div>
         <div>
-            <label asp-for="Name"></label>
-            <input type="text" asp-for="Name" />
+            <label asp-for="Trainee.Name"></label>
+            <input type="text" asp-for="Trainee.Name" />
+            <span asp-validation-for="Trainee.Name"></span>
         </div>
         <div>
-            <label asp-for="Surname"></label>
-            <input type ="text" asp-for="Surname" />
+            <label asp-for="Trainee.Surname"></label>
+            <input type="text" asp-for="Trainee.Surname" />
+            <span asp-validation-for="Trainee.Surname"></span>
         </div>
         <div>
-            <label asp-for="Gender"></label>
-            <select asp-for="Gender" asp-items="Html.GetEnumSelectList<DAL.Models.Gender>()"></select>
+            <label asp-for="Trainee.Gender"></label>
+            <select asp-for="Trainee.Gender" asp-items="Html.GetEnumSelectList<DAL.Models.Gender>()"></select>
+            <span asp-validation-for="Trainee.Gender"></span>
         </div>
         <div>
-            <label asp-for="Email"></label>
-            <input type="email" asp-for="Email" />
+            <label asp-for="Trainee.Email"></label>
+            <input type="email" asp-for="Trainee.Email" />
+            <span asp-validation-for="Trainee.Email"></span>
         </div>
         <div>
-            <label asp-for="Phone"></label>
-            <input type="text" asp-for="Phone" />
+            <label asp-for="Trainee.Phone"></label>
+            <input type="text" asp-for="Trainee.Phone" />
+            <span asp-validation-for="Trainee.Phone"></span>
         </div>
         <div>
-            <label asp-for="BirthDay"></label>
-            <input type="datetime" asp-for="BirthDay" />
+            <label asp-for="Trainee.BirthDay"></label>
+            <input type="date" asp-for="Trainee.BirthDay" />
+            <span asp-validation-for="Trainee.BirthDay"></span>
         </div>
         <div>
-            <label asp-for="Direction"></label>
-            <select asp-for="Direction" asp-items="ViewBag.Directions"></select>
-        </div>
+            <label asp-for="Direction.Id"></label>
+            <select asp-for="Direction.Id" asp-items="ViewBag.Directions"></select>
+            <span asp-validation-for="Trainee.Direction"></span>
+        </div>  
         <div>
-            <label asp-for="Project"></label>
-            <select asp-for="Project" asp-items="ViewBag.Projects"></select>
+            <label asp-for="Project.Id"></label>
+            <select asp-for="Project.Id" asp-items="ViewBag.Projects"></select>
+            <span asp-validation-for="Trainee.Project"></span>
         </div>
         <div>
             <input type="submit" value="Save" />
         </div>
     </div>
 </form>
+
+
+@section scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+}

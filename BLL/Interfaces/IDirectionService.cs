@@ -12,6 +12,6 @@ namespace BLL.Interfaces
         public IEnumerable<DirectionDTO> GetSortedByTrainees(IEnumerable<DirectionDTO> directionDTOs, bool descending);
         public IEnumerable<DirectionDTO> GetSortedByName(IEnumerable<DirectionDTO> directionDTOs, bool descending);
         public IEnumerable<DirectionDTO> GetRangeDirections(IEnumerable<DirectionDTO> directionDTOs, int index, int size);
-        public IEnumerable<DirectionDTO> FindByName(string name);
+        public IEnumerable<DirectionDTO> FindByName(IEnumerable<DirectionDTO> directions, string name);
     }
 }

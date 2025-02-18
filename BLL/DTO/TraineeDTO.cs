@@ -19,9 +19,10 @@ namespace BLL.DTO
         [EmailAddress]
         public string Email { get; set; }
         [Phone]
+        [RegularExpression(@"\+7\d{10}", ErrorMessage = "Невалидный номер телефона")]
         public string? Phone { get; set; }
         [Required]
-        public DateTime BirthDay { get; set; }
+        public DateOnly BirthDay { get; set; }
         [Required]
         public DirectionDTO Direction { get; set; }
         [Required]

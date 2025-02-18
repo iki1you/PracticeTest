@@ -27,6 +27,7 @@ namespace DAL.Repositories
         public void Create(Project project)
         {
             _db.Add(project);
+            _db.SaveChanges();
         }
 
         public void Update(Project project)
@@ -47,7 +48,7 @@ namespace DAL.Repositories
 
         public IEnumerable<Project> GetAll()
         {
-            return _db.Projects;
+            return _db.Projects.ToList();
         }
     }
 }
