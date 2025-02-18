@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories
 {
-    public class ProjectRepository: IProjectRepository, ICRUDableRepository<Project>
+    public class ProjectRepository: IProjectRepository, ICRUDable<Project>
     {
         private ApplicationContext _db;
 
@@ -19,7 +19,7 @@ namespace DAL.Repositories
             _db = context;
         }
 
-        public Project? Retrieve(int id)
+        public Project? Retrieve(Guid id)
         {
             return _db.Projects.Find(id);
         }
@@ -35,7 +35,7 @@ namespace DAL.Repositories
             _db.SaveChanges();
         }
 
-        public Project? Delete(int id)
+        public Project? Delete(Guid id)
         {
             var project = _db.Projects.Find(id);
             if (project == null)

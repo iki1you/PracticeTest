@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 
 namespace BLL.Interfaces
 {
-    public interface IDirectionService: ICRUDableService<DirectionDTO>
+    public interface IDirectionService
     {
-        public IEnumerable<DirectionDTO> GetSortedByTrainees(IEnumerable<DirectionDTO> directionDTOs, bool descending);
-        public IEnumerable<DirectionDTO> GetSortedByName(IEnumerable<DirectionDTO> directionDTOs, bool descending);
-        public IEnumerable<DirectionDTO> GetRangeDirections(IEnumerable<DirectionDTO> directionDTOs, int index, int size);
-        public IEnumerable<DirectionDTO> FindByName(string name);
+        public void Create(DirectionDTO directionDto);
+
+        public DirectionDTO Retrieve(Guid id);
+        public void Update(DirectionDTO directionDto);
+        public DirectionDTO Delete(Guid id);
     }
 }

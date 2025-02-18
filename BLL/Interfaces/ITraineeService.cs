@@ -1,12 +1,14 @@
 ﻿using BLL.DTO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace BLL.Interfaces
 {
-    public interface ITraineeService: ICRUDableService<TraineeDTO>
+    public interface ITraineeService
     {
-        public void AttachProject(TraineeDTO traineeDto, ProjectDTO projectDto);
-        public void AttachDirection(TraineeDTO traineeDto, DirectionDTO directionDto);
-        public IEnumerable<TraineeDTO> GetByProjectId(int Id);
-        public IEnumerable<TraineeDTO> GetByDirectionId(int Id);
+        public void Create(TraineeDTO traineeDto);
     }
 }

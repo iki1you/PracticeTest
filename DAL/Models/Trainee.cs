@@ -5,9 +5,8 @@ namespace DAL.Models
 {
     public class Trainee
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; }
-        public string Surname { get; set; }
         public Gender Gender { get; set; }
         [Key]
         public string Email { get; set; }

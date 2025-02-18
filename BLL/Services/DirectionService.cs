@@ -1,105 +1,12 @@
-﻿using BLL.DTO;
-using BLL.Interfaces;
-using DAL.Interfaces;
-using DAL.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace BLL.Services
 {
-    public class DirectionService: IDirectionService
+    public class DirectionService
     {
-        private readonly ITraineeRepository _traineeRepository;
-        private readonly IDirectionRepository _directionRepository;
-
-        public DirectionService(ITraineeRepository traineeRepository,
-            IDirectionRepository directionRepository)
-        {
-            _traineeRepository = traineeRepository;
-            _directionRepository = directionRepository;
-        }
-
-        public void Create(DirectionDTO direction)
-        {
-            if (_directionRepository.GetAll().Any(x => x.Name == direction.Name))
-                throw new ArgumentException("Direction exists");
-            _directionRepository.Create(new Direction
-            {
-                Name = direction.Name
-            });
-        }
-
-        public DirectionDTO Delete(int id)
-        {
-            var directionDto = Retrieve(id);
-
-            var trainees = _traineeRepository.GetAll().Where(x => x.Direction.Id == id);
-            if (trainees.Any())
-                throw new ArgumentException($"You can't delete, {trainees} subscribes to this direction");
-
-            _directionRepository.Delete(id);
-            return directionDto;
-        }
-
-        public DirectionDTO Retrieve(int id)
-        {
-            var direction = _directionRepository.Retrieve(id);
-            if (direction == null)
-                throw new ArgumentNullException("Direction doesn`t exist");
-            return new DirectionDTO
-            {
-                Id = direction.Id,
-                Name = direction.Name,
-                TraineeCount = direction.TraineeCount
-            };
-        }
-
-        public void Update(DirectionDTO directionDto)
-        {
-            var direction = _directionRepository.Retrieve(directionDto.Id);
-            if (direction == null)
-                throw new ArgumentNullException("Direction doesn`t exist");
-            _directionRepository.Update(new Direction
-            {
-                Id = directionDto.Id,
-                Name = directionDto.Name,
-                TraineeCount = direction.TraineeCount
-            });
-        }
-
-        public IEnumerable<DirectionDTO> GetAll()
-        {
-            return _directionRepository.GetAll()
-                .Select(x => new DirectionDTO
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    TraineeCount = x.TraineeCount
-                });
-        }
-
-        public IEnumerable<DirectionDTO> GetSortedByTrainees(IEnumerable<DirectionDTO> directionDTOs, bool descending)
-        {
-            var sorted = directionDTOs.OrderBy(x => x.TraineeCount);
-            return descending? sorted.Reverse(): sorted;
-        }
-
-        public IEnumerable<DirectionDTO> GetSortedByName(IEnumerable<DirectionDTO> directionDTOs, bool descending)
-        {
-            var sorted = directionDTOs.OrderBy(x => x.Name);
-            return descending ? sorted.Reverse() : sorted;
-        }
-
-        public IEnumerable<DirectionDTO> GetRangeDirections(IEnumerable<DirectionDTO> directionDTOs, int index, int size)
-        {
-            if (index < 0)
-                throw new ArgumentOutOfRangeException("index < 0");
-            return directionDTOs.Skip(index * size).Take(size);
-        }
-
-        public IEnumerable<DirectionDTO> FindByName(string name)
-        {
-            return _directionRepository.GetAll()
-                .Where(direction => direction.Name.Contains(name))
-                .Select(direction => Retrieve(direction.Id));
-        }
     }
 }
