@@ -19,9 +19,10 @@ namespace BLL.DTO
         [EmailAddress]
         public string Email { get; set; }
         [Phone]
+        [RegularExpression(@"\+7\d{10}", ErrorMessage = "Example: +71111111111")]
         public string? Phone { get; set; }
         [Required]
-        public DateTime BirthDay { get; set; }
+        public DateOnly BirthDay { get; set; }
         [Required]
         public DirectionDTO Direction { get; set; }
         [Required]

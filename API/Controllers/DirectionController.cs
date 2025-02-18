@@ -2,9 +2,12 @@
 
 namespace WebApi.Controllers
 {
+    [ApiController]
+    [Route("[controller]")]
     public class DirectionController : Controller
     {
-        public IActionResult Index()
+        [HttpGet("project")]
+        public async Task<IActionResult> Index()
         {
             return View();
         }

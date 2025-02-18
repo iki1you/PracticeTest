@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Проекты и направления";
+}
+<style>
+    .tab {
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background-color: #f1f1f1;
+    }
+</style>
+<h3>@ViewData["Message"]</h3>
+
+<div class="tab">
+    <button class="tablinks" onclick="openCity(event, 'London')">London</button>
+    <button class="tablinks" onclick="openCity(event, 'Paris')">Paris</button>
+</div>
+
+<div id="London" class="tabcontent" style="display: block;">
+    <h3>London</h3>
+    <p>London is the capital city of England.</p>
+    <list elements="ViewBag.Projects"></list>
+</div>
+
+<div id="Paris" class="tabcontent" style="display: none;">
+  <h3>Paris</h3>
+  <p>Paris is the capital of France.</p>
+  <list elements="ViewBag.Directions"></list>
+</div>
+
+
+
+@section scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        function openCity(evt, cityName) {
+            var i, tabcontent;
+
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+              tabcontent[i].style.display = "none";
+            }
+
+            document.getElementById(cityName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
+}

@@ -20,9 +20,6 @@ namespace DAL.EF
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Trainee>().ToTable("Trainee");
-            modelBuilder.Entity<Project>().ToTable("Project");
-            modelBuilder.Entity<Direction>().ToTable("Direction");
         }
     }
 }
