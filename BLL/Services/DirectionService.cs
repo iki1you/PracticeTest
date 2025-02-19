@@ -2,6 +2,7 @@
 using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
+using WebApi.Models;
 
 namespace BLL.Services
 {
@@ -76,19 +77,25 @@ namespace BLL.Services
                 });
         }
 
-        public IEnumerable<DirectionDTO> GetSortedByTrainees(IEnumerable<DirectionDTO> directionDTOs, bool descending)
+        public IEnumerable<DirectionDTO> GetSorted(
+            IEnumerable<DirectionDTO> directionDTOs, SortingKey sortKey, bool descending)
         {
-            var sorted = directionDTOs.OrderBy(x => x.TraineeCount);
-            return descending? sorted.Reverse(): sorted;
-        }
-
-        public IEnumerable<DirectionDTO> GetSortedByName(IEnumerable<DirectionDTO> directionDTOs, bool descending)
-        {
-            var sorted = directionDTOs.OrderBy(x => x.Name);
+            var sorted = directionDTOs;
+            switch (sortKey)
+            {
+                case SortingKey.Name:
+                    sorted = directionDTOs.OrderBy(x => x.Name);
+                    break;
+                case SortingKey.TraineeCount:
+                    sorted = directionDTOs.OrderBy(x => x.TraineeCount);
+                    break;
+                default:
+                    break;
+            }
             return descending ? sorted.Reverse() : sorted;
         }
 
-        public IEnumerable<DirectionDTO> GetRangeDirections(IEnumerable<DirectionDTO> directionDTOs, int index, int size)
+        public IEnumerable<DirectionDTO> GetRange(IEnumerable<DirectionDTO> directionDTOs, int index, int size)
         {
             if (index < 0)
                 throw new ArgumentOutOfRangeException("index < 0");

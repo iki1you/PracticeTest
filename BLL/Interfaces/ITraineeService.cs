@@ -1,4 +1,5 @@
 ﻿using BLL.DTO;
+using WebApi.Models;
 
 namespace BLL.Interfaces
 {
@@ -6,10 +7,14 @@ namespace BLL.Interfaces
     {
         public void AttachProject(TraineeDTO traineeDto, ProjectDTO projectDto);
         public void AttachDirection(TraineeDTO traineeDto, DirectionDTO directionDto);
-        public IEnumerable<IGrouping<ProjectDTO, TraineeDTO>> GroupByProjects(
-            IEnumerable<TraineeDTO> traineesDto);
-        public IEnumerable<IGrouping<DirectionDTO, TraineeDTO>> GroupByDirections
-            (IEnumerable<TraineeDTO> traineesDto);
+        public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> GroupByProjects(
+            IEnumerable<ProjectDTO> projectsDto,
+            IEnumerable<TraineeDTO> traineesDto,
+            SortingKey sortKey, bool descending);
+        public IEnumerable<(DirectionDTO, IEnumerable<TraineeDTO>)> GroupByDirections(
+            IEnumerable<DirectionDTO> directionsDto,
+            IEnumerable<TraineeDTO> traineesDto,
+            SortingKey sortKey, bool descending);
         public IEnumerable<TraineeDTO> FilterByDirections(
             IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<DirectionDTO> directions);
         public IEnumerable<TraineeDTO> FilterByProjects(

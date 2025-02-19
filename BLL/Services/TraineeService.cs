@@ -3,7 +3,9 @@ using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq;
+using WebApi.Models;
 
 namespace BLL.Services
 {
@@ -151,20 +153,26 @@ namespace BLL.Services
             return _traineeRepository.GetAll().Select(trainee => Retrieve(trainee.Id));
         }
 
-        public IEnumerable<IGrouping<ProjectDTO, TraineeDTO>> GroupByProjects(
-            IEnumerable<TraineeDTO> traineesDto)
+        public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> GroupByProjects(
+            IEnumerable<ProjectDTO> projectsDto,
+            IEnumerable<TraineeDTO> traineesDto,
+            SortingKey sortKey, bool descending)
         {
-            return traineesDto
-                .Select(trainee => trainee)
-                .GroupBy(x => x.Project);
+            var total = projectsDto
+                .Select(project => (project,
+                traineesDto.Where(trainee => trainee.Project.Id == project.Id)));
+            return total;
         }
 
-        public IEnumerable<IGrouping<DirectionDTO, TraineeDTO>> GroupByDirections(
-            IEnumerable<TraineeDTO> traineesDto)
+        public IEnumerable<(DirectionDTO, IEnumerable<TraineeDTO>)> GroupByDirections(
+            IEnumerable<DirectionDTO> directionsDto, 
+            IEnumerable<TraineeDTO> traineesDto, 
+            SortingKey sortKey, bool descending)
         {
-            return traineesDto
-                .Select(trainee => trainee)
-                .GroupBy(x => x.Direction);
+            var total = directionsDto
+                .Select(direction => (direction, 
+                traineesDto.Where(trainee => trainee.Direction.Id == direction.Id)));
+            return total;
         }
 
         public IEnumerable<TraineeDTO> GetByDirectionId(int Id)

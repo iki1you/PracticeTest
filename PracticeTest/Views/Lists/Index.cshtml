@@ -1,73 +1,164 @@
 ﻿@using BLL.DTO
+@using WebApi.Models
+@model ListsViewModel
 @{
     ViewData["Title"] = "Create trainee";
 }
 <p>@TempData["Message"]</p>
 
-<style>
-    .active {
-        background-color: aqua;
-    }
-</style>
-
 <div class="tab">
-    <button class="tablinks active" onclick="openCity(event, 'direction')">Направления</button>
-    <button class="tablinks" onclick="openCity(event, 'project')">Проекты</button>
+    <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName" 
+        asp-route-descending="@Model.PageListState.Descending"
+        asp-route-index="0" 
+        asp-route-pageSize="@Model.PageListState.PageSize"
+        asp-route-sortOrder="@Model.PageListState.SortOrder" 
+        asp-route-choose="@StateChoose.Directions">
+        Направления
+    </a>
+    <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName" 
+        asp-route-descending="@Model.PageListState.Descending"
+        asp-route-index="0" 
+        asp-route-pageSize="@Model.PageListState.PageSize"
+        asp-route-sortOrder="@Model.PageListState.SortOrder" 
+        asp-route-choose="@StateChoose.Projects">
+        Проекты
+    </a>
+    @if (Model.PageListState.Descending)
+    {
+        <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName"
+           asp-route-descending="@false"
+           asp-route-index="@Model.PageListState.CurrentPage"
+           asp-route-pageSize="@Model.PageListState.PageSize"
+           asp-route-sortOrder="@Model.PageListState.SortOrder"
+           asp-route-choose="@Model.PageListState.Choose">
+            Сортировка по убыванию
+        </a>
+    }
+    else
+    {
+        <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName"
+           asp-route-descending="@true"
+           asp-route-index="@Model.PageListState.CurrentPage"
+           asp-route-pageSize="@Model.PageListState.PageSize"
+           asp-route-sortOrder="@Model.PageListState.SortOrder"
+           asp-route-choose="@Model.PageListState.Choose">
+            Сортировка по возрастанию
+        </a>
+    }  
 </div>
 
-<div id="direction" class="tabcontent" style="display: block">
-    <div>
-        @foreach (IGrouping<DirectionDTO, TraineeDTO> direction in ViewBag.TraineeDirections)
+
+<table id="direction" class="tabcontent" style="display: block">
+    <tr>
+        <th>
+            <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName"
+               asp-route-descending="@Model.PageListState.Descending"
+               asp-route-index="@Model.PageListState.CurrentPage"
+               asp-route-pageSize="@Model.PageListState.PageSize"
+               asp-route-sortOrder="@SortingKey.Name"
+               asp-route-choose="@Model.PageListState.Choose">
+                Имя
+            </a>
+        </th>
+        <th>
+            <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName"
+               asp-route-descending="@Model.PageListState.Descending"
+               asp-route-index="@Model.PageListState.CurrentPage"
+               asp-route-pageSize="@Model.PageListState.PageSize"
+               asp-route-sortOrder="@SortingKey.TraineeCount"
+               asp-route-choose="@Model.PageListState.Choose">
+                Количество стажеров
+            </a>
+        </th>
+        <th>
+            Стажеры
+        </th>
+    </tr>
+    @if (Model.PageListState.Choose == StateChoose.Directions)
+    {
+        @foreach (var direction in Model.DirectionGroups)
         {
-            <p>Имя: @direction.Key.Name</p>
-            <p>Количество стажеров: @direction.Key.TraineeCount</p>
-            <label for="trainees">Стажеры: </label>
-            <div id="trainees">
-                <select name="trainee" id="trainee-select">
-                    @foreach (TraineeDTO trainee in direction)
-                    {
-                        <option value="@trainee.Id">@trainee.Name</option>
-                    }
-                </select>        
-            </div>      
+            <tr>
+                <td>Имя: @direction.Item1.Name</td>
+                <td>Количество стажеров: @direction.Item1.TraineeCount</td>
+                <td id="trainees">
+                    <select name="trainee" id="trainee-select">
+                        @foreach (TraineeDTO trainee in direction.Item2)
+                        {
+                            <option value="@trainee.Id">@trainee.Name</option>
+                        }
+                    </select>
+                </td>
+            </tr>
         }
-    </div>
-</div>
-
-<div id="project" class="tabcontent" style="display: none;">
-    <div>
-        @foreach (IGrouping<ProjectDTO, TraineeDTO> project in ViewBag.TraineeProjects)
+    } else {
+        @foreach (var project in Model.ProjectGroups)
         {
-            <p>Имя: @project.Key.Name</p>
-            <p>Количество стажеров: @project.Key.TraineeCount</p>
-            <label for="trainees">Стажеры:</label>
-            <div id="trainees">
-                <select name="trainee" id="trainee-select">
-                    @foreach (TraineeDTO trainee in project)
-                    {
-                        <option value="@trainee.Id">@trainee.Name</option>
-                    }
-                </select>
-            </div>
+            <tr>
+                <td>Имя: @project.Item1.Name</td>
+                <td>Количество стажеров: @project.Item1.TraineeCount</td>
+                <td id="trainees">
+                    <select name="trainee" id="trainee-select">
+                        @foreach (TraineeDTO trainee in project.Item2)
+                        {
+                            <option value="@trainee.Id">@trainee.Name</option>
+                        }
+                    </select>
+                </td>
+            </tr>
         }
-    </div>
-</div>
+    }
+</table>
 
-
-@section scripts {
-    <script>
-        function openCity(evt, cityName) {
-          var i, tabcontent, tablinks;
-          tabcontent = document.getElementsByClassName("tabcontent");
-          for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-          }
-          tablinks = document.getElementsByClassName("tablinks");
-          for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-          }
-          document.getElementById(cityName).style.display = "block";
-          evt.currentTarget.className += " active";
+<table>
+    <tr>
+        @if (Model.PageListState.CurrentPage - 1 >= 0)
+        {
+            <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName"
+               asp-route-descending="@Model.PageListState.Descending"
+               asp-route-index="@(Model.PageListState.CurrentPage - 1)"
+               asp-route-pageSize="@Model.PageListState.PageSize"
+               asp-route-sortOrder="@Model.PageListState.SortOrder"
+               asp-route-choose="@Model.PageListState.Choose">
+                @(Model.PageListState.CurrentPage - 1)
+            </a>
+        } else
+        {
+            <b>...</b>
         }
-    </script>
+    </tr>
+    
+    <tr>@Model.PageListState.CurrentPage</tr>
+    <tr>
+        @if (Model.PageListState.CurrentPage + 1 < Model.PageListState.PageMax)
+        {
+            <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName"
+               asp-route-descending="@Model.PageListState.Descending"
+               asp-route-index="@(Model.PageListState.CurrentPage + 1)"
+               asp-route-pageSize="@Model.PageListState.PageSize"
+               asp-route-sortOrder="@Model.PageListState.SortOrder"
+               asp-route-choose="@Model.PageListState.Choose">
+                @(Model.PageListState.CurrentPage + 1)
+            </a>
+        } else
+        {
+            <b>...</b>
+        }
+    </tr>
+</table>
+
+@using (Html.BeginForm("Index", "Lists", FormMethod.Get))
+{
+    <input name="@Model.PageListState.CurrentPage" type="hidden" value="0" />
+    <input name="@Model.PageListState.Choose" type="hidden" value="@Model.PageListState.Choose" />
+    <input name="@Model.PageListState.Descending" type="hidden" value="@Model.PageListState.Descending" />
+    <input name="@Model.PageListState.SearchName" type="hidden" value="@Model.PageListState.SearchName" />
+    <input name="@Model.PageListState.SortOrder" type="hidden" value="@Model.PageListState.SortOrder" />
+
+    <label for="page_size">Размер</label>
+    <input id="page_size" name="pageSize" value="" />
+
+    <p>
+        <input type="submit" value="Отправить" />
+    </p>
 }

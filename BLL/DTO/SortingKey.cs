@@ -1,6 +1,6 @@
 ﻿namespace WebApi.Models
 {
-    public enum SortingKeys
+    public enum SortingKey
     {
         Name,
         TraineeCount

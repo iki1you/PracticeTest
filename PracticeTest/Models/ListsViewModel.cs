@@ -4,7 +4,8 @@ namespace WebApi.Models
 {
     public class ListsViewModel
     {
-        public IEnumerable<IGrouping<DirectionDTO, TraineeDTO>> DirectionGroups { get; set; }
-        public IEnumerable<IGrouping<ProjectDTO, TraineeDTO>> ProjectGroups { get; set; }
+        public IEnumerable<(DirectionDTO, IEnumerable<TraineeDTO>)> DirectionGroups { get; set; }
+        public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> ProjectGroups { get; set; }
+        public PageListState PageListState { get; set; }
     }
 }

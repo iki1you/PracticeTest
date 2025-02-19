@@ -1,6 +1,6 @@
 ﻿using BLL.Interfaces;
+using DAL.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using PracticeTest.Controllers;
 using WebApi.Models;
 
@@ -22,65 +22,62 @@ namespace WebApi.Controllers
             _projectService = projectService;
             _directionService = directionService;
             _logger = logger;
-
         }
 
         public IActionResult Index(
-            string searchName, SortingKeys sortbyName, bool descending, 
-            int directionIndex = 0, int projectIndex = 0, int pageSize = 10)
-        {
-            var directions = _directionService.GetAll();
-            var projects = _projectService.GetAll();
+            string searchName, bool descending, 
+            int index, int pageSize = 10, 
+            SortingKey sortOrder = SortingKey.Name, 
+            StateChoose choose = StateChoose.Directions)
+        {  
             var trainees = _traineeService.GetAll();
-
-            if (searchName != null)
+            ListsViewModel model;
+            var pageState = new PageListState
             {
-                directions = _directionService.FindByName(directions, searchName);
-                projects = _projectService.FindByName(projects, searchName);
-            }
-
-            switch (sortbyName)
+                SearchName = searchName,
+                Descending = descending,
+                CurrentPage = index,
+                PageSize = pageSize,
+                SortOrder = sortOrder,
+                Choose = choose
+            };
+            if (choose == StateChoose.Directions)
             {
-                case SortingKeys.Name:
-                    directions = _directionService.GetSortedByName(directions, descending);
-                    projects = _projectService.GetSortedByName(projects, descending);
-                    break;
-                case SortingKeys.TraineeCount:
-                    directions = _directionService.GetSortedByTrainees(directions, descending);
-                    projects = _projectService.GetSortedByTrainees(projects, descending);
-                    break;
-                default:
-                    break;
+                var directions = _directionService.GetAll();
+                if (searchName != null)
+                {
+                    directions = _directionService.FindByName(directions, searchName);
+                }
+                pageState.PageMax = (int)Math.Ceiling(1.0 * directions.Count() / pageSize);
+                directions = _directionService.GetSorted(directions, sortOrder, descending);
+                directions = _directionService.GetRange(directions, index, pageSize);
+                var traineesByDirections = _traineeService.GroupByDirections(
+                    directions, trainees, sortOrder, descending);
+                model = new ListsViewModel
+                {
+                    DirectionGroups = traineesByDirections,
+                    PageListState = pageState
+                };
+            } else
+            {
+                var projects = _projectService.GetAll();
+                if (searchName != null)
+                {
+                    projects = _projectService.FindByName(projects, searchName);
+                }
+                pageState.PageMax = (int)Math.Ceiling(1.0 * projects.Count() / pageSize);
+                projects = _projectService.GetSorted(projects, sortOrder, descending);
+                projects = _projectService.GetRange(projects, index, pageSize);
+                var traineesByProjects = _traineeService.GroupByProjects(
+                    projects, trainees, sortOrder, descending);
+                model = new ListsViewModel
+                {
+                    ProjectGroups = traineesByProjects,
+                    PageListState = pageState,
+                };
             }
-
-            var directionIndexMax = Math.Ceiling(1.0 * directions.Count() / pageSize);
-            var projectIndexMax = Math.Ceiling(1.0 * projects.Count() / pageSize);
-
-            directions = _directionService.GetRangeDirections(directions, directionIndex, pageSize);
-            projects = _projectService.GetRangeProjects(projects, projectIndex, pageSize);
-
             
-            trainees = _traineeService.FilterByProjects(trainees, projects);
-            trainees = _traineeService.FilterByDirections(trainees, directions);
-
-            var traineesByProjects = _traineeService.GroupByProjects(trainees);
-            var traineesByDirections = _traineeService.GroupByDirections(trainees);
-            switch (sortbyName)
-            {
-                case SortingKeys.Name:
-                    traineesByProjects = traineesByProjects.OrderBy(x => x.Key.Name);
-                    traineesByDirections = traineesByDirections.OrderBy(x => x.Key.Name);
-                    break;
-                case SortingKeys.TraineeCount:
-                    traineesByProjects = traineesByProjects.OrderBy(x => x.Key.TraineeCount);
-                    traineesByDirections = traineesByDirections.OrderBy(x => x.Key.TraineeCount);
-                    break;
-                default:
-                    break;
-            }
-            ViewBag.TraineeProjects = traineesByProjects;
-            ViewBag.TraineeDirections = traineesByDirections;
-            return View();
+            return View(model);
         }
     }
 }
