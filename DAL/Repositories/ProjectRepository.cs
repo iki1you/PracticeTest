@@ -21,7 +21,7 @@ namespace DAL.Repositories
 
         public Project? Retrieve(int id)
         {
-            return _db.Projects.Find(id);
+            return _db.Projects.FirstOrDefault(x => x.Id == id);
         }
 
         public void Create(Project project)
@@ -41,7 +41,7 @@ namespace DAL.Repositories
             var project = _db.Projects.Find(id);
             if (project == null)
                 return null;
-            _db.Remove(id);
+            _db.Remove(project);
             _db.SaveChanges();
             return project;
         }

@@ -32,9 +32,10 @@ namespace BLL.Services
         {
             var projectDto = Retrieve(id);
 
-            var trainees = _traineeRepository.GetAll().Where(x => x.Project.Id == id);
+            var trainees = _traineeRepository
+                .GetAll().Where(x => x.Project.Id == id);
             if (trainees.Any())
-                throw new ArgumentException($"Нельзя удалить, {trainees} подписаны на этот проект");
+                throw new ArgumentException($"Нельзя удалить, отвяжите всех стажеров от проекта");
 
             _projectRepository.Delete(id);
             return projectDto;
@@ -58,12 +59,9 @@ namespace BLL.Services
             var project = _projectRepository.Retrieve(projectDto.Id);
             if (project == null)
                 throw new ArgumentNullException("Такого проекта не существует");
-            _projectRepository.Update(new Project
-            {
-                Id = projectDto.Id,
-                Name = projectDto.Name,
-                TraineeCount = project.TraineeCount
-            });
+            project.Name = projectDto.Name;
+            project.TraineeCount = projectDto.TraineeCount;
+            _projectRepository.Update(project);
         }
 
         public IEnumerable<ProjectDTO> GetAll()

@@ -3,8 +3,11 @@ using WebApi.Models;
 
 namespace BLL.Interfaces
 {
-    public interface ITraineeService: ICRUDableService<TraineeDTO>
+    public interface ITraineeService
     {
+        public void Create(TraineeDTO itemDto);
+        public void Update(TraineeDTO itemDto);
+        public IEnumerable<TraineeDTO> GetAll();
         public void AttachProject(TraineeDTO traineeDto, ProjectDTO projectDto);
         public void AttachDirection(TraineeDTO traineeDto, DirectionDTO directionDto);
         public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> GroupByProjects(
@@ -19,6 +22,6 @@ namespace BLL.Interfaces
             IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<DirectionDTO> directions);
         public IEnumerable<TraineeDTO> FilterByProjects(
             IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<ProjectDTO> projects);
-        public IEnumerable<TraineeDTO> GetByDirectionId(int Id);
+        public TraineeDTO Retrieve(IEnumerable<TraineeDTO> items, int id);
     }
 }

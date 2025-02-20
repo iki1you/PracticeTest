@@ -25,7 +25,7 @@ namespace DAL.Repositories
 
         public Direction? Retrieve(int id)
         {
-            return _db.Directions.Find(id);
+            return _db.Directions.FirstOrDefault(x => x.Id == id);
         }
 
         public void Create(Direction direction)
@@ -45,7 +45,7 @@ namespace DAL.Repositories
             var direction = _db.Directions.Find(id);
             if (direction == null)
                 return null;
-            _db.Remove(id);
+            _db.Remove(direction);
             _db.SaveChanges();
             return direction;
         }

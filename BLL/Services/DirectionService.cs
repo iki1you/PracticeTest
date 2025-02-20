@@ -32,9 +32,10 @@ namespace BLL.Services
         {
             var directionDto = Retrieve(id);
 
-            var trainees = _traineeRepository.GetAll().Where(x => x.Direction.Id == id);
+            var trainees = _traineeRepository
+                .GetAll().Where(x => x.Direction.Id == id).Select(x => x.Name);
             if (trainees.Any())
-                throw new ArgumentException($"Нельзя удалить, {trainees} подписаны на направление");
+                throw new ArgumentException($"Нельзя удалить, отвяжите всех стажеров от направления");
 
             _directionRepository.Delete(id);
             return directionDto;
@@ -58,12 +59,9 @@ namespace BLL.Services
             var direction = _directionRepository.Retrieve(directionDto.Id);
             if (direction == null)
                 throw new ArgumentNullException("Такое направление не существует");
-            _directionRepository.Update(new Direction
-            {
-                Id = directionDto.Id,
-                Name = directionDto.Name,
-                TraineeCount = direction.TraineeCount
-            });
+            direction.Name = directionDto.Name;
+            direction.TraineeCount = direction.TraineeCount;
+            _directionRepository.Update(direction);
         }
 
         public IEnumerable<DirectionDTO> GetAll()

@@ -1,7 +1,6 @@
 ﻿using BLL.Interfaces;
 using DAL.Models;
 using Microsoft.AspNetCore.Mvc;
-using PracticeTest.Controllers;
 using WebApi.Models;
 
 namespace WebApi.Controllers
@@ -11,17 +10,14 @@ namespace WebApi.Controllers
         private readonly ITraineeService _traineeService;
         private readonly IProjectService _projectService;
         private readonly IDirectionService _directionService;
-        private readonly ILogger<HomeController> _logger;
         public ListsController(ITraineeService traineeService,
             IProjectService projectService,
-            IDirectionService directionService,
-            ILogger<HomeController> logger
+            IDirectionService directionService
             )
         {
             _traineeService = traineeService;
             _projectService = projectService;
             _directionService = directionService;
-            _logger = logger;
         }
 
         public IActionResult Index(
@@ -56,7 +52,8 @@ namespace WebApi.Controllers
                 model = new ListsViewModel
                 {
                     DirectionGroups = traineesByDirections,
-                    PageListState = pageState
+                    PageListState = pageState,
+                    TraineesList = trainees
                 };
             } else
             {
@@ -74,6 +71,7 @@ namespace WebApi.Controllers
                 {
                     ProjectGroups = traineesByProjects,
                     PageListState = pageState,
+                    TraineesList = trainees
                 };
             }
             

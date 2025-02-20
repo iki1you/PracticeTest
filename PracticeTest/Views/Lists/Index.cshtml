@@ -2,12 +2,63 @@
 @using WebApi.Models
 @model ListsViewModel
 @{
-    ViewData["Title"] = "Create trainee";
+    ViewData["Title"] = "Направления и проекты";
 }
+
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%; 
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0,0,0);
+        background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+</style>
+
 <p>@TempData["Message"]</p>
 
+@using (Html.BeginForm("Index", "Lists", FormMethod.Get))
+{
+    <input name="index" type="hidden" value="0" />
+    <input name="choose" type="hidden" value="@Model.PageListState.Choose" />
+    <input name="descending" type="hidden" value="@Model.PageListState.Descending" />
+    <input name="pageSize" type="hidden" value="@Model.PageListState.PageSize" />
+    <input name="sortOrder" type="hidden" value="@Model.PageListState.SortOrder"/>
+
+    <label for="search_name"></label>
+    <input id="search_name" name="searchName" value="" />
+    <input type="submit" value="Поиск" />
+}
+
 <div class="tab">
-    <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName" 
+    <a asp-action="Index" asp-route-searchName="" 
         asp-route-descending="@Model.PageListState.Descending"
         asp-route-index="0" 
         asp-route-pageSize="@Model.PageListState.PageSize"
@@ -15,7 +66,7 @@
         asp-route-choose="@StateChoose.Directions">
         Направления
     </a>
-    <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName" 
+    <a asp-action="Index" asp-route-searchName="" 
         asp-route-descending="@Model.PageListState.Descending"
         asp-route-index="0" 
         asp-route-pageSize="@Model.PageListState.PageSize"
@@ -23,6 +74,7 @@
         asp-route-choose="@StateChoose.Projects">
         Проекты
     </a>
+    &nbsp;&nbsp;&nbsp;&nbsp
     @if (Model.PageListState.Descending)
     {
         <a asp-action="Index" asp-route-searchName="@Model.PageListState.SearchName"
@@ -47,6 +99,115 @@
     }  
 </div>
 
+
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        @if (Model.PageListState.Choose == StateChoose.Projects) {
+            <span class="close">&times;</span>
+            <h2>Изменить проект</h2>
+            @using (Html.BeginForm("Edit", "Project", FormMethod.Get))
+            {
+                <input name="index" type="hidden" value="0" />
+                <input name="choose" type="hidden" value="@Model.PageListState.Choose" />
+                <input name="descending" type="hidden" value="@Model.PageListState.Descending" />
+                <input name="pageSize" type="hidden" value="@Model.PageListState.PageSize" />
+
+                <div>Id: <label id="project_id2" for="project_id"></label></div>
+                <input id="project_id" type="hidden" name="projectId" value="" />
+                <label for="project_name">Название проекта: </label>
+                <input id="project_name" name="projectName" value="" required/>
+                <br>
+
+                <label for="project_trainees">Количество стажеров: </label>
+                <input id="project_trainees" name="projectTrainees" value="" />
+                <br>
+
+                <input type="submit" value="Изменить" />
+                <br>
+            }
+            @using (Html.BeginForm("AttachTrainee", "Project", FormMethod.Get))
+            {
+                <br>
+                <input name="index" type="hidden" value="0" />
+                <input name="choose" type="hidden" value="@Model.PageListState.Choose" />
+                <input name="descending" type="hidden" value="@Model.PageListState.Descending" />
+                <input name="pageSize" type="hidden" value="@Model.PageListState.PageSize" />
+                <input id="project_id_attach" type="hidden" name="projectId" value="" />
+
+                <select name="traineeId" id="trainee-select">
+                    @foreach (var trainee in Model.TraineesList)
+                    {
+                        <option value="@trainee.Id">@trainee.Name</option>
+                    }
+                </select>
+                <input type="submit" value="Привязать стажера" />
+                <br>
+            }
+            @using (Html.BeginForm("Delete", "Project", FormMethod.Get))
+            {
+                <input name="index" type="hidden" value="0" />
+                <input name="choose" type="hidden" value="@Model.PageListState.Choose" />
+                <input name="descending" type="hidden" value="@Model.PageListState.Descending" />
+                <input name="pageSize" type="hidden" value="@Model.PageListState.PageSize" />
+
+                <input id="delete_id" name="projectId" type="hidden" value="" />
+                <input type="submit" value="Удалить" />
+                <br>
+            }
+        } else {
+            <span class="close">&times;</span>
+            <h2>Изменить направление</h2>
+            @using (Html.BeginForm("Edit", "Direction", FormMethod.Get))
+            {
+                <input name="index" type="hidden" value="0" />
+                <input name="choose" type="hidden" value="@Model.PageListState.Choose" />
+                <input name="descending" type="hidden" value="@Model.PageListState.Descending" />
+                <input name="pageSize" type="hidden" value="@Model.PageListState.PageSize" />
+                <div>Id: <label id="project_id2" for="project_id"></label></div>
+                <input id="project_id" type="hidden" name="directionId" value="" />
+                <label for="project_name">Название направления: </label>
+                <input id="project_name" name="directionName" value="" required/>
+                <br>
+
+                <label for="project_trainees">Количество стажеров: </label>
+                <input id="project_trainees" name="directionTrainees" value="" />
+                <br>
+
+                <input type="submit" value="Изменить" />
+                <br>
+            }
+            @using (Html.BeginForm("AttachTrainee", "Direction", FormMethod.Get))
+            {
+                <br>
+                <input name="index" type="hidden" value="0" />
+                <input name="choose" type="hidden" value="@Model.PageListState.Choose" />
+                <input name="descending" type="hidden" value="@Model.PageListState.Descending" />
+                <input name="pageSize" type="hidden" value="@Model.PageListState.PageSize" />
+                <input id="project_id_attach" type="hidden" name="directionId" value="" />
+
+                <select name="traineeId" id="trainee-select">
+                    @foreach (var trainee in Model.TraineesList)
+                    {
+                        <option value="@trainee.Id">@trainee.Name</option>
+                    }
+                </select>
+                <input type="submit" value="Привязать стажера" />
+                <br>
+            }
+            @using (Html.BeginForm("Delete", "Direction", FormMethod.Get))
+            {
+                <input name="index" type="hidden" value="0" />
+                <input name="choose" type="hidden" value="@Model.PageListState.Choose" />
+                <input name="descending" type="hidden" value="@Model.PageListState.Descending" />
+                <input name="pageSize" type="hidden" value="@Model.PageListState.PageSize" />
+                <input id="delete_id" name="directionId" type="hidden" value="" />
+                <input type="submit" value="Удалить" />
+                <br>
+            }
+        }
+    </div>
+
+</div>
 
 <table id="direction" class="tabcontent" style="display: block">
     <tr>
@@ -79,8 +240,8 @@
         @foreach (var direction in Model.DirectionGroups)
         {
             <tr>
-                <td>Имя: @direction.Item1.Name</td>
-                <td>Количество стажеров: @direction.Item1.TraineeCount</td>
+                <td>@direction.Item1.Name</td>
+                <td align="center">@direction.Item1.TraineeCount</td>
                 <td id="trainees">
                     <select name="trainee" id="trainee-select">
                         @foreach (TraineeDTO trainee in direction.Item2)
@@ -89,14 +250,20 @@
                         }
                     </select>
                 </td>
+                <td>
+                    <button id="myBtn" onclick='projectForm(event,
+                        @(direction.Item1.Id), "@(direction.Item1.Name)", @(direction.Item1.TraineeCount))'>
+                        Изменить
+                    </button>
+                </td>
             </tr>
         }
     } else {
         @foreach (var project in Model.ProjectGroups)
         {
             <tr>
-                <td>Имя: @project.Item1.Name</td>
-                <td>Количество стажеров: @project.Item1.TraineeCount</td>
+                <td>@project.Item1.Name</td>
+                <td align="center">@project.Item1.TraineeCount</td>
                 <td id="trainees">
                     <select name="trainee" id="trainee-select">
                         @foreach (TraineeDTO trainee in project.Item2)
@@ -104,6 +271,12 @@
                             <option value="@trainee.Id">@trainee.Name</option>
                         }
                     </select>
+                </td>
+                <td>
+                    <button id="myBtn" onclick='projectForm(event, 
+                        @(project.Item1.Id), "@(project.Item1.Name)", @(project.Item1.TraineeCount))'>
+                        Изменить
+                    </button>
                 </td>
             </tr>
         }
@@ -149,16 +322,51 @@
 
 @using (Html.BeginForm("Index", "Lists", FormMethod.Get))
 {
-    <input name="@Model.PageListState.CurrentPage" type="hidden" value="0" />
-    <input name="@Model.PageListState.Choose" type="hidden" value="@Model.PageListState.Choose" />
-    <input name="@Model.PageListState.Descending" type="hidden" value="@Model.PageListState.Descending" />
-    <input name="@Model.PageListState.SearchName" type="hidden" value="@Model.PageListState.SearchName" />
-    <input name="@Model.PageListState.SortOrder" type="hidden" value="@Model.PageListState.SortOrder" />
+    <input name="index" type="hidden" value="0" />
+    <input name="choose" type="hidden" value="@Model.PageListState.Choose" />
+    <input name="descending" type="hidden" value="@Model.PageListState.Descending" />
+    <input name="searchName" type="hidden" value="@Model.PageListState.SearchName" />
+    <input name="sortOrder" type="hidden" value="@Model.PageListState.SortOrder" />
 
-    <label for="page_size">Размер</label>
-    <input id="page_size" name="pageSize" value="" />
-
-    <p>
-        <input type="submit" value="Отправить" />
-    </p>
+    <label for="page_size">Размер страницы: <b id="valuePage">@Model.PageListState.PageSize</b></label>
+    <input id="page_size" type="range" name="pageSize"
+        min="1" max="15" oninput="document.getElementById('valuePage').textContent=this.value" />
+    <input type="submit" value="Применить" />
 }
+
+<script>
+    var modal = document.getElementById("myModal");
+    var btn = document.getElementById("myBtn");
+    var span = document.getElementsByClassName("close")[0];
+
+    var pId = document.getElementById("project_id");
+    var pId2 = document.getElementById("project_id2");
+    var pName = document.getElementById("project_name");
+    var pTrainees = document.getElementById("project_trainees");
+    var deleteId = document.getElementById("delete_id");
+    var attachId = document.getElementById("project_id_attach");
+    
+    function projectForm(evt, id, name, count) {
+        modal.style.display = "block";
+        pId.value = id;
+        pId2.textContent = id;
+        pName.value = name;
+        pTrainees.value = count;
+        pName.textContent = name;
+        deleteId.value = id;
+        attachId.value = id;
+    }
+
+    span.onclick = function() {
+      modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+
+    
+
+</script>

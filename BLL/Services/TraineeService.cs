@@ -3,8 +3,6 @@ using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
 using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using System.Linq;
 using WebApi.Models;
 
 namespace BLL.Services
@@ -71,6 +69,8 @@ namespace BLL.Services
             trainee.Direction.TraineeCount -= 1;
             trainee.Direction = direction;
             direction.TraineeCount += 1;
+            _traineeRepository.Update(trainee);
+            _directionRepository.Update(direction);
         }
 
         public void AttachProject(TraineeDTO traineeDto, ProjectDTO projectDto)
@@ -85,35 +85,8 @@ namespace BLL.Services
             trainee.Project.TraineeCount -= 1;
             trainee.Project = project;
             project.TraineeCount += 1;
-        }
-
-        public TraineeDTO Retrieve(int id)
-        {
-            var trainee = _traineeRepository.Retrieve(id);
-            if (trainee == null)
-                throw new ArgumentNullException("Стажера не существует");
-            return new TraineeDTO
-            {
-                Id = trainee.Id,
-                Name = trainee.Name,
-                Surname = trainee.Surname,
-                Gender = trainee.Gender,
-                Email = trainee.Email,
-                Phone = trainee.Phone,
-                BirthDay = trainee.BirthDay,
-                Direction = new DirectionDTO
-                {
-                    Id = trainee.Direction.Id,
-                    Name = trainee.Direction.Name,
-                    TraineeCount = trainee.Direction.TraineeCount
-                },
-                Project = new ProjectDTO
-                {
-                    Id = trainee.Project.Id,
-                    Name = trainee.Project.Name,
-                    TraineeCount = trainee.Project.TraineeCount
-                }
-            };
+            _traineeRepository.Update(trainee);
+            _projectRepository.Update(project);
         }
 
         public void Update(TraineeDTO traineeDto)
@@ -139,18 +112,30 @@ namespace BLL.Services
             });
         }
 
-        public TraineeDTO Delete(int id)
-        {
-            var trainee = Retrieve(id);
-            trainee.Project.TraineeCount -= 1;
-            trainee.Direction.TraineeCount -= 1;
-            _traineeRepository.Delete(id);
-            return trainee;    
-        }
-
         public IEnumerable<TraineeDTO> GetAll()
         {
-            return _traineeRepository.GetAll().Select(trainee => Retrieve(trainee.Id));
+            return _traineeRepository.GetAll().Select(trainee => new TraineeDTO
+            {
+                Id = trainee.Id,
+                Name = trainee.Name,
+                Surname = trainee.Surname,
+                Gender = trainee.Gender,
+                Email = trainee.Email,
+                Phone = trainee.Phone,
+                BirthDay = trainee.BirthDay,
+                Direction = new DirectionDTO
+                {
+                    Id = trainee.Direction.Id,
+                    Name = trainee.Direction.Name,
+                    TraineeCount = trainee.Direction.TraineeCount
+                },
+                Project = new ProjectDTO
+                {
+                    Id = trainee.Project.Id,
+                    Name = trainee.Project.Name,
+                    TraineeCount = trainee.Project.TraineeCount
+                }
+            });
         }
 
         public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> GroupByProjects(
@@ -175,13 +160,6 @@ namespace BLL.Services
             return total;
         }
 
-        public IEnumerable<TraineeDTO> GetByDirectionId(int Id)
-        {
-            return _traineeRepository.GetAll()
-                .Where(trainee => trainee.Direction.Id == Id)
-                .Select(trainee => Retrieve(trainee.Id));
-        }
-
         public IEnumerable<TraineeDTO> FilterByDirections(
             IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<DirectionDTO> directions)
         {
@@ -194,6 +172,14 @@ namespace BLL.Services
         {
             var ids = projects.Select(x => x.Id);
             return traineeDTOs.Where(x => ids.Contains(x.Project.Id));
+        }
+
+        public TraineeDTO Retrieve(IEnumerable<TraineeDTO> items, int id)
+        {
+            var trainee = items.First(x => x.Id == id);
+            if (trainee == null)
+                throw new NullReferenceException("Стажер не найден");
+            return trainee;
         }
     }
 }
