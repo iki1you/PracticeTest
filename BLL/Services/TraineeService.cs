@@ -92,24 +92,20 @@ namespace BLL.Services
         public void Update(TraineeDTO traineeDto)
         {
             var trainee = _traineeRepository.Retrieve(traineeDto.Id);
+            var trainees = _traineeRepository.GetAll().Where(x => x.Id != traineeDto.Id);
             if (trainee == null)
                 throw new ArgumentNullException("Стажер не существует");
-            if (_traineeRepository.GetAll().Any(x => x.Phone == traineeDto.Phone))
+            if (traineeDto.Phone != null && trainees.Any(x => x.Phone == traineeDto.Phone))
                 throw new ArgumentException("Стажер с таким номером телефона уже существует");
-            if (_traineeRepository.GetAll().Any(x => x.Email == traineeDto.Email))
+            if (trainees.Any(x => x.Email == traineeDto.Email))
                 throw new ArgumentException("Стажер с таким email уже существует");
-            _traineeRepository.Update(new Trainee
-            {
-                Id = traineeDto.Id,
-                Name = traineeDto.Name,
-                Surname = trainee.Surname,
-                Gender = traineeDto.Gender,
-                Email = traineeDto.Email,
-                Phone = traineeDto.Phone,
-                BirthDay = traineeDto.BirthDay,
-                Direction = trainee.Direction,
-                Project = trainee.Project
-            });
+            trainee.Name = traineeDto.Name;
+            trainee.Surname = traineeDto.Surname;
+            trainee.Gender = traineeDto.Gender;
+            trainee.Email = traineeDto.Email;
+            trainee.BirthDay = traineeDto.BirthDay;
+            trainee.Phone = traineeDto.Phone;
+            _traineeRepository.Update(trainee);
         }
 
         public IEnumerable<TraineeDTO> GetAll()

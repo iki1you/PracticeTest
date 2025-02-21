@@ -26,14 +26,11 @@ namespace DAL.Repositories
 
         public Trainee? Retrieve(int id)
         {
-            return _db.Trainees.Find(id);
+            return _db.Trainees.FirstOrDefault(x => x.Id == id);
         }
         public Trainee? Retrieve(string email)
         {
-            var trainee = _db.Trainees.Where(x => x.Email == email);
-            if (trainee.Count() == 0)
-                return null;
-            return trainee.First();
+            return _db.Trainees.FirstOrDefault(x => x.Email == email);
         }
 
         public void Create(Trainee trainee)

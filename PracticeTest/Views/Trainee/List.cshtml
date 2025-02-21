@@ -1,0 +1,235 @@
+﻿@model WebApi.Models.TraineeListViewModel
+
+@{
+    ViewData["Title"] = "Create trainee";
+}
+<p>@TempData["Message"]</p>
+
+<style>
+    table {
+        border: 1px solid #eee;
+        table-layout: fixed;
+        width: 100%;
+        margin-bottom: 20px;
+        font-size: 12px;
+    }
+
+        table tr {
+            font-weight: bold;
+            padding: 5px;
+            background: #efefef;
+            border: 1px solid #dddddd;
+        }
+
+        table td {
+            padding: 5px 10px;
+            border: 1px solid #eee;
+            text-align: left;
+        }
+
+        table tbody tr:nth-child(odd) {
+            background: #fff;
+        }
+
+        table tbody tr:nth-child(even) {
+            background: #F7F7F7;
+        }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0,0,0);
+        background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+</style>
+
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Изменить данные стажера:</h2>
+        @using (Html.BeginForm("Edit", "Trainee", FormMethod.Post))
+        {
+            <div class="validation" asp-validation-summary="ModelOnly"></div>
+            <div>Id: <label id="trainee_id_lable" for="trainee_id"></label></div>
+            <input id="trainee_id" type="hidden" name="traineeId" value="" />
+
+            <label for="trainee_name">Имя: </label>
+            <input id="trainee_name" name="traineeName" value="" required />
+            <br>
+
+            <label for="trainee_surname">Фамилия: </label>
+            <input id="trainee_surname" name="traineeSurname" value="" required />
+            <br>
+
+            <label for="trainee_gender">Пол: </label>
+            <select id="trainee_gender" name="traineeGender" value="" required>
+                <option value=@DAL.Models.Gender.Male>Мужской</option>
+                <option value="@DAL.Models.Gender.Female">Женский</option>
+            </select>
+            <br>
+
+            <label for="trainee_email">Email: </label>
+            <input id="trainee_email" name="traineeEmail" value="" required />
+            <br>
+
+            <div>
+                <label asp-for="Trainee.Phone" for="trainee_phone">Телефон: </label>
+                <input asp-for ="Trainee.Phone" id="trainee_phone" name="traineePhone" value="" />
+                <span asp-validation-for="Trainee.Phone"></span>
+            </div>
+
+            <label for="trainee_birthday">Дата рождения: </label>
+            <input id="trainee_birthday" type="date" name="traineeBirthday" value="" required />
+            <br>
+
+            <input type="submit" value="Изменить" />
+            <br>
+        }
+    </div>
+</div>
+
+@using (Html.BeginForm("List", "Trainee", FormMethod.Get))
+{
+    <select name="directionId" id="direction-select">
+        <option value=-1></option>
+        @foreach (var direction in Model.Directions)
+        {
+            <option value="@direction.Id">@direction.Name</option>
+        }
+    </select>
+    <select name="projectId" id="project-select">
+        <option value=-1></option>
+        @foreach (var project in Model.Projects)
+        {
+            <option value="@project.Id">@project.Name</option>
+        }
+    </select>
+    <input type="submit" value="Фильтровать" />
+    <br>
+}
+
+<table id="direction" class="tabcontent" style="display: block">
+    <tr>
+        <td>Id</td>
+        <td>Имя</td>
+        <td>Фамилия</td>
+        <td>Пол</td>
+        <td>Email</td>
+        <td>Телефон</td>
+        <td>Дата рождения</td>
+        <td>Проект</td>
+        <td>Направление</td>
+    </tr>
+    @foreach (var trainee in Model.Trainees)
+    {
+        <tr>
+            <td>@trainee.Id</td>
+            <td>@trainee.Name</td>
+            <td>@trainee.Surname</td>
+            <td>@trainee.Gender</td>
+            <td>@trainee.Email</td>
+            <td>@trainee.Phone</td>
+            <td>@trainee.BirthDay</td>
+            <td>@trainee.Project.Name</td>
+            <td>@trainee.Direction.Name</td>
+            <td>
+                <button id="myBtn" onclick='traineeForm(event,
+                        @(trainee.Id), "@(trainee.Name)", "@(trainee.Surname)", 
+                        "@(trainee.Gender)", "@(trainee.Email)", "@(trainee.Phone)",
+                        "@(trainee.BirthDay.ToString("yyyy-MM-dd"))",
+                        "@(trainee.Project.Id)", "@(trainee.Direction.Id)")
+                '>
+                    Изменить
+                </button>
+            </td>
+        </tr>
+    }
+</table>
+
+
+
+@section scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        var modal = document.getElementById("myModal");
+        var btn = document.getElementById("myBtn");
+        var span = document.getElementsByClassName("close")[0];
+
+        var tId = document.getElementById("trainee_id");
+        var tIdLable = document.getElementById("trainee_id_lable");
+        var tName = document.getElementById("trainee_name");
+        var tSurname = document.getElementById("trainee_surname");
+        var tGender = document.getElementById("trainee_gender");
+        var tEmail = document.getElementById("trainee_email");
+        var tPhone = document.getElementById("trainee_phone");
+        var tBirthDay = document.getElementById("trainee_birthday");
+        var tProjectId = document.getElementById("trainee_project");
+        var tDirectionId = document.getElementById("trainee_direction");
+
+        function traineeForm(evt, id, name, surname, gender, 
+            email, phone, birthday, projectId, directionId) {
+            modal.style.display = "block";
+
+            tId.value = id;
+            tIdLable.textContent = id;
+            tName.value = name;
+            tSurname.value = surname;
+            tGender.value = gender;
+            tEmail.value = email;
+            tPhone.value = phone;
+            tBirthDay.value = birthday;
+            tProjectId.value = projectId;
+            tDirectionId.value = directionId;
+
+            tName.textContent = name;
+            tSurname.textContent = surname;
+            tGender.textContent = gender;
+            tEmail.textContent = email;
+            tPhone.textContent = phone;
+            tBirthDay.textContent = birthday;
+
+            tProjectId.value = projectId;
+            tDirectionId.value = directionId;
+
+        }
+
+        span.onclick = function() {
+          modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        }
+    </script>
+}
