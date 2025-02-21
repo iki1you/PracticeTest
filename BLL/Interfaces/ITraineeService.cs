@@ -23,5 +23,6 @@ namespace BLL.Interfaces
         public IEnumerable<TraineeDTO> FilterByProjects(
             IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<ProjectDTO> projects);
         public TraineeDTO Retrieve(IEnumerable<TraineeDTO> items, int id);
+        public TraineeDTO Retrieve(IEnumerable<TraineeDTO> items, string email);
     }
 }

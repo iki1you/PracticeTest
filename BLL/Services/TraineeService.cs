@@ -28,7 +28,7 @@ namespace BLL.Services
             if (direction == null)
                 throw new ArgumentNullException("Направление не существует");
 
-            var project = _projectRepository.Retrieve(traineeDto.Direction.Id);
+            var project = _projectRepository.Retrieve(traineeDto.Project.Id);
             if (project == null)
                 throw new ArgumentNullException("Проект не существует");
 
@@ -131,7 +131,7 @@ namespace BLL.Services
                     Name = trainee.Project.Name,
                     TraineeCount = trainee.Project.TraineeCount
                 }
-            });
+            }).OrderBy(x => x.Id);
         }
 
         public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> GroupByProjects(
@@ -173,6 +173,14 @@ namespace BLL.Services
         public TraineeDTO Retrieve(IEnumerable<TraineeDTO> items, int id)
         {
             var trainee = items.First(x => x.Id == id);
+            if (trainee == null)
+                throw new NullReferenceException("Стажер не найден");
+            return trainee;
+        }
+
+        public TraineeDTO Retrieve(IEnumerable<TraineeDTO> items, string email)
+        {
+            var trainee = items.First(x => x.Email == email);
             if (trainee == null)
                 throw new NullReferenceException("Стажер не найден");
             return trainee;

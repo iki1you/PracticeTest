@@ -1,7 +1,7 @@
 ﻿@model WebApi.Models.TraineeListViewModel
 
 @{
-    ViewData["Title"] = "Create trainee";
+    ViewData["Title"] = "Список стажеров";
 }
 <p>@TempData["Message"]</p>
 
@@ -95,7 +95,6 @@
                 <option value="@DAL.Models.Gender.Female">Женский</option>
             </select>
             <br>
-
             <label for="trainee_email">Email: </label>
             <input id="trainee_email" name="traineeEmail" value="" required />
             <br>
@@ -136,42 +135,44 @@
     <br>
 }
 
-<table id="direction" class="tabcontent" style="display: block">
-    <tr>
-        <td>Id</td>
-        <td>Имя</td>
-        <td>Фамилия</td>
-        <td>Пол</td>
-        <td>Email</td>
-        <td>Телефон</td>
-        <td>Дата рождения</td>
-        <td>Проект</td>
-        <td>Направление</td>
-    </tr>
-    @foreach (var trainee in Model.Trainees)
-    {
+<div id="chatroom"></div>
+<table id="table_content" class="tabcontent" style="display: block">
+    <tbody id="table_modify">
         <tr>
-            <td>@trainee.Id</td>
-            <td>@trainee.Name</td>
-            <td>@trainee.Surname</td>
-            <td>@trainee.Gender</td>
-            <td>@trainee.Email</td>
-            <td>@trainee.Phone</td>
-            <td>@trainee.BirthDay</td>
-            <td>@trainee.Project.Name</td>
-            <td>@trainee.Direction.Name</td>
-            <td>
-                <button id="myBtn" onclick='traineeForm(event,
-                        @(trainee.Id), "@(trainee.Name)", "@(trainee.Surname)", 
+            <td>Id</td>
+            <td>Имя</td>
+            <td>Фамилия</td>
+            <td>Пол</td>
+            <td>Email</td>
+            <td>Телефон</td>
+            <td>Дата рождения</td>
+            <td>Проект</td>
+            <td>Направление</td>
+        </tr>
+        @foreach (var trainee in Model.Trainees)
+        {
+            <tr id="t-@(trainee.Id)" class="table-tr">
+                <td class="tId">@trainee.Id</td>
+                <td class="tName">@trainee.Name</td>
+                <td class="tSurname">@trainee.Surname</td>
+                <td class="tGender">@trainee.Gender</td>
+                <td class="tEmail">@trainee.Email</td>
+                <td class="tPhone">@trainee.Phone</td>
+                <td class="tBirthDay">@trainee.BirthDay</td>
+                <td class="tProject">@trainee.Project.Name</td>
+                <td class="tDirection">@trainee.Direction.Name</td>
+                <td>
+                    <button id="myBtn" onclick='traineeForm(event,
+                        @(trainee.Id), "@(trainee.Name)", "@(trainee.Surname)",
                         "@(trainee.Gender)", "@(trainee.Email)", "@(trainee.Phone)",
                         "@(trainee.BirthDay.ToString("yyyy-MM-dd"))",
-                        "@(trainee.Project.Id)", "@(trainee.Direction.Id)")
-                '>
-                    Изменить
-                </button>
-            </td>
-        </tr>
-    }
+                        "@(trainee.Project.Id)", "@(trainee.Direction.Id)")'>
+                        Изменить
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
 </table>
 
 
@@ -179,6 +180,7 @@
 @section scripts {
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
     <script>
         var modal = document.getElementById("myModal");
         var btn = document.getElementById("myBtn");
@@ -192,11 +194,13 @@
         var tEmail = document.getElementById("trainee_email");
         var tPhone = document.getElementById("trainee_phone");
         var tBirthDay = document.getElementById("trainee_birthday");
-        var tProjectId = document.getElementById("trainee_project");
-        var tDirectionId = document.getElementById("trainee_direction");
+        
+        const hubConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/chat")
+            .build();
 
         function traineeForm(evt, id, name, surname, gender, 
-            email, phone, birthday, projectId, directionId) {
+            email, phone, birthday) {
             modal.style.display = "block";
 
             tId.value = id;
@@ -207,19 +211,13 @@
             tEmail.value = email;
             tPhone.value = phone;
             tBirthDay.value = birthday;
-            tProjectId.value = projectId;
-            tDirectionId.value = directionId;
 
             tName.textContent = name;
             tSurname.textContent = surname;
-            tGender.textContent = gender;
+
             tEmail.textContent = email;
             tPhone.textContent = phone;
             tBirthDay.textContent = birthday;
-
-            tProjectId.value = projectId;
-            tDirectionId.value = directionId;
-
         }
 
         span.onclick = function() {
@@ -231,5 +229,42 @@
             modal.style.display = "none";
           }
         }
+
+        hubConnection.on("ReceiveEdit", function(message) {
+            
+            var trainee = document.getElementById("t-" + message["id"]);
+            trainee.getElementsByClassName("tName")[0].textContent = message['name'];
+            trainee.getElementsByClassName("tSurname")[0].textContent = message['surname'];
+            trainee.getElementsByClassName("tGender")[0].textContent = message['gender'];
+            trainee.getElementsByClassName("tEmail")[0].textContent = message['email'];
+            trainee.getElementsByClassName("tPhone")[0].textContent = message['phone'];
+            trainee.getElementsByClassName("tBirthDay")[0].textContent = message['birthday'];
+            if (message.hasOwnProperty('project') && message.hasOwnProperty('direction')) {
+                trainee.getElementsByClassName("tProject")[0].textContent = message['project'];
+                trainee.getElementsByClassName("tDirection")[0].textContent = message['direction'];
+            }
+        });
+        hubConnection.on("ReceiveCreate", function(message) {
+            var node = document.getElementsByClassName("table-tr")[0];
+            var trainee = node.cloneNode(true);
+            var table = document.getElementById("table_modify");
+            trainee.id = 't-' + message['id'];
+            trainee.getElementsByClassName("tId")[0].textContent = message['id'];
+            trainee.getElementsByClassName("tName")[0].textContent = message['name'];
+            trainee.getElementsByClassName("tSurname")[0].textContent = message['surname'];
+            trainee.getElementsByClassName("tGender")[0].textContent = message['gender'];
+            trainee.getElementsByClassName("tEmail")[0].textContent = message['email'];
+            trainee.getElementsByClassName("tPhone")[0].textContent = message['phone'];
+            trainee.getElementsByClassName("tBirthDay")[0].textContent = message['birthday'];
+            trainee.getElementsByClassName("tProject")[0].textContent = message['project'];
+            trainee.getElementsByClassName("tDirection")[0].textContent = message['direction'];
+            table.appendChild(trainee);
+        });
+
+
+        hubConnection.start()
+            .catch(function (err) {
+                return console.error(err.toString());
+            });
     </script>
 }

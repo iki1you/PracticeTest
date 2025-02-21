@@ -3,9 +3,11 @@ using BLL.Interfaces;
 using DAL.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using PracticeTest.Controllers;
 using System.Collections;
 using WebApi.Models;
+using WebApi.SignalRHubs;
 
 namespace WebApi.Controllers
 {
@@ -15,17 +17,19 @@ namespace WebApi.Controllers
         private readonly IProjectService _projectService;
         private readonly IDirectionService _directionService;
         private readonly ILogger<HomeController> _logger;
+        private readonly IHubContext<NotificationHub> _hubContext;
         public TraineeController(ITraineeService traineeService, 
             IProjectService projectService, 
             IDirectionService directionService,
-            ILogger<HomeController> logger
+            ILogger<HomeController> logger,
+            IHubContext<NotificationHub> hubContext
             )
         {
             _traineeService = traineeService;
             _projectService = projectService;
             _directionService = directionService;
             _logger = logger;
-
+            _hubContext = hubContext;
         }
 
         [HttpGet]
@@ -49,7 +53,7 @@ namespace WebApi.Controllers
                 }
                 catch (Exception ex)
                 {
-                    TempData["Message"] = ex.Data;
+                    TempData["Message"] = ex.Message;
                 }
             }     
             return RedirectToAction("Create");
@@ -75,27 +79,45 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("/create")]
-        public ActionResult Create(CreateViewModel model)
+        public async Task<ActionResult> CreateAsync(CreateViewModel model)
         {
             var traineeDto = model.Trainee;
             traineeDto.Project = model.Project;
             traineeDto.Direction = model.Direction;
+            TraineeDTO trainee;
             string message = "Форма успешно отправлена";
             try
             {
                 _traineeService.Create(traineeDto);
+                trainee = _traineeService.Retrieve(_traineeService.GetAll(), traineeDto.Email);
+                traineeDto.Project = trainee.Project;
+                traineeDto.Direction = trainee.Direction;
+                traineeDto.Id = trainee.Id;
             }
             catch (Exception ex)
             {
                 message = ex.Message;
             }
             TempData["Message"] = message;
+            var notification = new Dictionary<string, string>
+            {
+                { "id", traineeDto.Id.ToString() },
+                { "name", traineeDto.Name },
+                { "surname", traineeDto.Surname },
+                { "gender", traineeDto.Gender.ToString() },
+                { "email", traineeDto.Email },
+                { "phone", traineeDto.Phone ?? "" },
+                { "birthday", traineeDto.BirthDay.ToString("dd.MM.yyyy") },
+                { "project", traineeDto.Project.Name },
+                { "direction", traineeDto.Direction.Name }
+            };
+            await _hubContext.Clients.All.SendAsync("ReceiveCreate", notification);
             return RedirectToAction("Create");
         }
 
         [HttpPost]
         [Route("/trainees")]
-        public ActionResult Edit(
+        public async Task<ActionResult> EditAsync(
             int traineeId, string traineeName, string traineeSurname, 
             Gender traineeGender, string traineeEmail, string traineePhone,
             DateOnly traineeBirthday)
@@ -120,6 +142,17 @@ namespace WebApi.Controllers
                 message = ex.Message;
             }
             TempData["Message"] = message;
+            var notification = new Dictionary<string, string>
+            {
+                { "id", traineeDto.Id.ToString() },
+                { "name", traineeDto.Name },
+                { "surname", traineeDto.Surname },
+                { "gender", traineeDto.Gender.ToString() },
+                { "email", traineeDto.Email },
+                { "phone", traineeDto.Phone },
+                { "birthday", traineeDto.BirthDay.ToString("dd.MM.yyyy") }
+            };
+            await _hubContext.Clients.All.SendAsync("ReceiveEdit", notification);
             return RedirectToAction("List");
         }
 
