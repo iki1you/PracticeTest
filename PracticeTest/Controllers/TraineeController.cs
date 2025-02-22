@@ -1,11 +1,9 @@
 ﻿using BLL.DTO;
 using BLL.Interfaces;
-using DAL.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.SignalR;
 using PracticeTest.Controllers;
-using System.Collections;
 using WebApi.Models;
 using WebApi.SignalRHubs;
 
@@ -119,7 +117,7 @@ namespace WebApi.Controllers
         [Route("/trainees")]
         public async Task<ActionResult> EditAsync(
             int traineeId, string traineeName, string traineeSurname, 
-            Gender traineeGender, string traineeEmail, string traineePhone,
+            GenderDTO traineeGender, string traineeEmail, string traineePhone,
             DateOnly traineeBirthday)
         {
             var traineeDto = new TraineeDTO

@@ -14,7 +14,7 @@ namespace BLL.DTO
         [Required]
         public string Surname { get; set; }
         [Required]
-        public Gender Gender { get; set; }
+        public GenderDTO Gender { get; set; }
         [Required]
         [EmailAddress]
         public string Email { get; set; }

@@ -48,7 +48,7 @@ namespace BLL.Services
             {
                 Name = traineeDto.Name,
                 Surname = traineeDto.Surname,
-                Gender = traineeDto.Gender,
+                Gender = (Gender)traineeDto.Gender,
                 Email = traineeDto.Email,
                 Phone = traineeDto.Phone,
                 BirthDay = traineeDto.BirthDay,
@@ -101,7 +101,7 @@ namespace BLL.Services
                 throw new ArgumentException("Стажер с таким email уже существует");
             trainee.Name = traineeDto.Name;
             trainee.Surname = traineeDto.Surname;
-            trainee.Gender = traineeDto.Gender;
+            trainee.Gender = (Gender)traineeDto.Gender;
             trainee.Email = traineeDto.Email;
             trainee.BirthDay = traineeDto.BirthDay;
             trainee.Phone = traineeDto.Phone;
@@ -115,7 +115,7 @@ namespace BLL.Services
                 Id = trainee.Id,
                 Name = trainee.Name,
                 Surname = trainee.Surname,
-                Gender = trainee.Gender,
+                Gender = (GenderDTO)trainee.Gender,
                 Email = trainee.Email,
                 Phone = trainee.Phone,
                 BirthDay = trainee.BirthDay,

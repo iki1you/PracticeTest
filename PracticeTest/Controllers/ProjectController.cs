@@ -1,9 +1,7 @@
 ﻿using BLL.DTO;
 using BLL.Interfaces;
-using DAL.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using PracticeTest.Controllers;
 using WebApi.Models;
 using WebApi.SignalRHubs;
 
