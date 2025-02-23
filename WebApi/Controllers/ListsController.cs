@@ -19,6 +19,8 @@ namespace WebApi.Controllers
             _directionService = directionService;
         }
 
+        [HttpGet]
+        [Route("/lists-dir-prj")]
         public IActionResult Index(
             string searchName, bool descending, 
             int index, int pageSize = 10, 
@@ -40,9 +42,7 @@ namespace WebApi.Controllers
             {
                 var directions = _directionService.GetAll();
                 if (searchName != null)
-                {
                     directions = _directionService.FindByName(directions, searchName);
-                }
                 pageState.PageMax = (int)Math.Ceiling(1.0 * directions.Count() / pageSize);
                 directions = _directionService.GetSorted(directions, sortOrder, descending);
                 directions = _directionService.GetRange(directions, index, pageSize);
@@ -58,9 +58,7 @@ namespace WebApi.Controllers
             {
                 var projects = _projectService.GetAll();
                 if (searchName != null)
-                {
                     projects = _projectService.FindByName(projects, searchName);
-                }
                 pageState.PageMax = (int)Math.Ceiling(1.0 * projects.Count() / pageSize);
                 projects = _projectService.GetSorted(projects, sortOrder, descending);
                 projects = _projectService.GetRange(projects, index, pageSize);

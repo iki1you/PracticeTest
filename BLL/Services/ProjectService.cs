@@ -64,16 +64,14 @@ namespace BLL.Services
             _projectRepository.Update(project);
         }
 
-        public IEnumerable<ProjectDTO> GetAll()
-        {
-            return _projectRepository.GetAll()
-                .Select(x => new ProjectDTO
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    TraineeCount = x.TraineeCount
-                });
-        }
+        public IEnumerable<ProjectDTO> GetAll() => 
+            _projectRepository.GetAll().Select(x => new ProjectDTO
+            {
+                Id = x.Id,
+                Name = x.Name,
+                TraineeCount = x.TraineeCount
+            });
+
 
         public IEnumerable<ProjectDTO> GetSorted(
             IEnumerable<ProjectDTO> projectDTOs, SortingKey sortKey, bool descending)
@@ -101,11 +99,9 @@ namespace BLL.Services
             return projectDTOs.Skip(index * size).Take(size);
         }
 
-        public IEnumerable<ProjectDTO> FindByName(IEnumerable<ProjectDTO> projects, string name)
-        {
-            return projects
+        public IEnumerable<ProjectDTO> FindByName(
+            IEnumerable<ProjectDTO> projects, string name) => projects
                 .Where(project => project.Name.Contains(name))
                 .Select(project => Retrieve(project.Id));
-        }
     }
 }

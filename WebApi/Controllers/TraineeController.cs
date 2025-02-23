@@ -31,7 +31,7 @@ namespace WebApi.Controllers
         }
 
         [HttpGet]
-        [Route("/create")]
+        [Route("/trainee-create")]
         public ActionResult Create()
         {
             ViewBag.Projects = new SelectList(_projectService.GetAll(), "Id", "Name");
@@ -76,7 +76,7 @@ namespace WebApi.Controllers
         }
 
         [HttpPost]
-        [Route("/create")]
+        [Route("/trainee-create")]
         public async Task<ActionResult> CreateAsync(CreateViewModel model)
         {
             var traineeDto = model.Trainee;
@@ -155,7 +155,7 @@ namespace WebApi.Controllers
         }
 
         [HttpGet]
-        [Route("/trainees")]
+        [Route("/trainees-list")]
         public ActionResult List(int directionId = -1, int projectId = -1)
         {
             var trainees = _traineeService.GetAll();

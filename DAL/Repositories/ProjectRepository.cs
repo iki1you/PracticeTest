@@ -1,12 +1,6 @@
 ﻿using DAL.EF;
 using DAL.Interfaces;
 using DAL.Models;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DAL.Repositories
 {
@@ -19,10 +13,7 @@ namespace DAL.Repositories
             _db = context;
         }
 
-        public Project? Retrieve(int id)
-        {
-            return _db.Projects.FirstOrDefault(x => x.Id == id);
-        }
+        public Project? Retrieve(int id) => _db.Projects.FirstOrDefault(x => x.Id == id);
 
         public void Create(Project project)
         {
@@ -46,9 +37,6 @@ namespace DAL.Repositories
             return project;
         }
 
-        public IEnumerable<Project> GetAll()
-        {
-            return _db.Projects.ToList();
-        }
+        public IEnumerable<Project> GetAll() => _db.Projects.ToList();
     }
 }

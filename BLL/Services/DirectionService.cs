@@ -64,16 +64,14 @@ namespace BLL.Services
             _directionRepository.Update(direction);
         }
 
-        public IEnumerable<DirectionDTO> GetAll()
-        {
-            return _directionRepository.GetAll()
-                .Select(x => new DirectionDTO
-                {
-                    Id = x.Id,
-                    Name = x.Name,
-                    TraineeCount = x.TraineeCount
-                });
-        }
+        public IEnumerable<DirectionDTO> GetAll() => 
+            _directionRepository.GetAll().Select(x => new DirectionDTO
+            {
+                Id = x.Id,
+                Name = x.Name,
+                TraineeCount = x.TraineeCount
+            });
+
 
         public IEnumerable<DirectionDTO> GetSorted(
             IEnumerable<DirectionDTO> directionDTOs, SortingKey sortKey, bool descending)
@@ -93,18 +91,18 @@ namespace BLL.Services
             return descending ? sorted.Reverse() : sorted;
         }
 
-        public IEnumerable<DirectionDTO> GetRange(IEnumerable<DirectionDTO> directionDTOs, int index, int size)
+        public IEnumerable<DirectionDTO> GetRange(
+            IEnumerable<DirectionDTO> directionDTOs, int index, int size)
         {
             if (index < 0)
                 throw new ArgumentOutOfRangeException("index < 0");
             return directionDTOs.Skip(index * size).Take(size);
         }
 
-        public IEnumerable<DirectionDTO> FindByName(IEnumerable<DirectionDTO> directions, string name)
-        {
-            return directions
-                .Where(direction => direction.Name.Contains(name))
-                .Select(direction => Retrieve(direction.Id));
-        }
+        public IEnumerable<DirectionDTO> FindByName(
+            IEnumerable<DirectionDTO> directions, string name) => 
+                directions.Where(direction => direction.Name.Contains(name))
+                          .Select(direction => Retrieve(direction.Id));
+
     }
 }

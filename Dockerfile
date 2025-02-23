@@ -1,7 +1,6 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /PracticeTest
 
-ENV ASPNETCORE_ENVIRONMENT="Development"
 ENV ASPNETCORE_URLS="http://+:8080"
 COPY . ./
 WORKDIR WebApi

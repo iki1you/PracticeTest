@@ -93,12 +93,14 @@ namespace BLL.Services
         {
             var trainee = _traineeRepository.Retrieve(traineeDto.Id);
             var trainees = _traineeRepository.GetAll().Where(x => x.Id != traineeDto.Id);
+
             if (trainee == null)
                 throw new ArgumentNullException("Стажер не существует");
             if (traineeDto.Phone != null && trainees.Any(x => x.Phone == traineeDto.Phone))
                 throw new ArgumentException("Стажер с таким номером телефона уже существует");
             if (trainees.Any(x => x.Email == traineeDto.Email))
                 throw new ArgumentException("Стажер с таким email уже существует");
+
             trainee.Name = traineeDto.Name;
             trainee.Surname = traineeDto.Surname;
             trainee.Gender = (Gender)traineeDto.Gender;
@@ -108,9 +110,9 @@ namespace BLL.Services
             _traineeRepository.Update(trainee);
         }
 
-        public IEnumerable<TraineeDTO> GetAll()
-        {
-            return _traineeRepository.GetAll().Select(trainee => new TraineeDTO
+        public IEnumerable<TraineeDTO> GetAll() => 
+            _traineeRepository.GetAll()
+            .Select(trainee => new TraineeDTO
             {
                 Id = trainee.Id,
                 Name = trainee.Name,
@@ -132,29 +134,18 @@ namespace BLL.Services
                     TraineeCount = trainee.Project.TraineeCount
                 }
             }).OrderBy(x => x.Id);
-        }
 
         public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> GroupByProjects(
             IEnumerable<ProjectDTO> projectsDto,
             IEnumerable<TraineeDTO> traineesDto,
-            SortingKey sortKey, bool descending)
-        {
-            var total = projectsDto
-                .Select(project => (project,
-                traineesDto.Where(trainee => trainee.Project.Id == project.Id)));
-            return total;
-        }
+            SortingKey sortKey, bool descending) => projectsDto
+                .Select(project => (project, traineesDto.Where(trainee => trainee.Project.Id == project.Id)));
 
         public IEnumerable<(DirectionDTO, IEnumerable<TraineeDTO>)> GroupByDirections(
             IEnumerable<DirectionDTO> directionsDto, 
             IEnumerable<TraineeDTO> traineesDto, 
-            SortingKey sortKey, bool descending)
-        {
-            var total = directionsDto
-                .Select(direction => (direction, 
-                traineesDto.Where(trainee => trainee.Direction.Id == direction.Id)));
-            return total;
-        }
+            SortingKey sortKey, bool descending) => directionsDto
+                .Select(direction => (direction, traineesDto.Where(trainee => trainee.Direction.Id == direction.Id)));
 
         public IEnumerable<TraineeDTO> FilterByDirections(
             IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<DirectionDTO> directions)

@@ -1,12 +1,6 @@
 ﻿using DAL.EF;
 using DAL.Interfaces;
 using DAL.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace DAL.Repositories
 {
     public class DirectionRepository: ICRUDableRepository<Direction>, IDirectionRepository
@@ -18,15 +12,9 @@ namespace DAL.Repositories
             _db = context;
         }
 
-        public IEnumerable<Direction> GetAll()
-        {
-            return _db.Directions.ToList();
-        }
+        public IEnumerable<Direction> GetAll() => _db.Directions.ToList();
 
-        public Direction? Retrieve(int id)
-        {
-            return _db.Directions.FirstOrDefault(x => x.Id == id);
-        }
+        public Direction? Retrieve(int id) => _db.Directions.FirstOrDefault(x => x.Id == id);
 
         public void Create(Direction direction)
         {

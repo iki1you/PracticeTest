@@ -19,19 +19,14 @@ namespace DAL.Repositories
             _db = context;
         }
 
-        public IEnumerable<Trainee> GetAll()
-        {
-            return _db.Trainees.Include(x => x.Project).Include(x => x.Direction);
-        }
+        public IEnumerable<Trainee> GetAll() => 
+            _db.Trainees.Include(x => x.Project).Include(x => x.Direction);
 
-        public Trainee? Retrieve(int id)
-        {
-            return _db.Trainees.FirstOrDefault(x => x.Id == id);
-        }
-        public Trainee? Retrieve(string email)
-        {
-            return _db.Trainees.FirstOrDefault(x => x.Email == email);
-        }
+        public Trainee? Retrieve(int id) =>
+            _db.Trainees.FirstOrDefault(x => x.Id == id);
+
+        public Trainee? Retrieve(string email) => 
+            _db.Trainees.FirstOrDefault(x => x.Email == email);
 
         public void Create(Trainee trainee)
         {
