@@ -32,6 +32,7 @@ namespace WebApi.Controllers
                 Name = projectName,
                 TraineeCount = projectTrainees
             };
+            // Можно вынести в глобальный обработчик ошибок
             try
             {
                 _projectService.Update(projectDto);
@@ -68,6 +69,7 @@ namespace WebApi.Controllers
                 var trainee = _traineeService.Retrieve(_traineeService.GetAll(), traineeId);
                 var project = _projectService.Retrieve(projectId);
                 _traineeService.AttachProject(trainee, project);
+                // Для уведомления нужно использовать DTO и маппер
                 var notification = new Dictionary<string, string>
                 {
                     { "id", trainee.Id.ToString() },
