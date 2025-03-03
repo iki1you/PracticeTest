@@ -1,4 +1,4 @@
-using DAL.EF;
+﻿using DAL.EF;
 using Microsoft.EntityFrameworkCore;
 using WebApi.SignalRHubs;
 
@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddSignalR();
+// Можно вынести в расширение
 BLL.StartupBLL.Configure(builder.Services);
 DAL.StartupDAL.Configure(builder.Services);
 

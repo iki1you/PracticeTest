@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories
 {
+    // Нужно переписать все репозитории на асинхронные методы,
+    // добавить Unit of work 
     public class TraineeRepository : ITraineeRepository, ICRUDableRepository<Trainee>
     {
         private ApplicationContext _db;
@@ -42,6 +44,7 @@ namespace DAL.Repositories
 
         public Trainee? Delete(int id)
         {
+            // Можно сделать удаление без лишнего запроса
             var trainee = _db.Trainees.Find(id);
             if (trainee == null)
                 return null;

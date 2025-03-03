@@ -26,6 +26,8 @@ namespace BLL.Services
         {
             var direction = _directionRepository.Retrieve(traineeDto.Direction.Id);
             if (direction == null)
+                // Текст в исключении лучше писать на английском. Исключение ArgumentNullException путает, у метода нет такого параметра.
+                // Здесь лучше создать свой тип исключения.
                 throw new ArgumentNullException("Направление не существует");
 
             var project = _projectRepository.Retrieve(traineeDto.Project.Id);
@@ -34,16 +36,23 @@ namespace BLL.Services
 
             if (!new PhoneAttribute().IsValid(traineeDto.Phone))
                 throw new ValidationException("Неправильный формат номера телефона");
+            // Обязательно вынести проверку дубликата в бд.
+            // Очень затратно загружать всю таблицу целиком, тем более синхронно, после чего перебирать все элементы без индекса.
+            // При большом размере таблиы текущее решение упадет, съест всю оперативку и будет тормозить вообще весь сервер.
             if (traineeDto.Phone != null && _traineeRepository.GetAll().Any(x => x.Phone == traineeDto.Phone))
                 throw new ArgumentException("Стажер с таким номером телефона уже существует");
 
             if (!new EmailAddressAttribute().IsValid(traineeDto.Email))
                 throw new ValidationException("Неправильный формат email");
+
             if (_traineeRepository.Retrieve(traineeDto.Email) != null)
                 throw new ArgumentException("Стажер с таким email уже существует");
-
+            // При вызове метода Retrieve и сохранении данных в Create неочевидно использование ChangeTracker-а.
+            // Нужно использовать CollectionNavigation https://learn.microsoft.com/en-us/ef/core/modeling/relationships/navigations#collection-navigations
+            // и не обновлять значения TraineeCount вручную. Это замечание обязательно исправить.
             project.TraineeCount += 1;
             direction.TraineeCount += 1;
+            // Здесь лучше использовать маппер, зачем нужен GenderDTO?
             _traineeRepository.Create(new Trainee
             {
                 Name = traineeDto.Name,
@@ -93,7 +102,7 @@ namespace BLL.Services
         {
             var trainee = _traineeRepository.Retrieve(traineeDto.Id);
             var trainees = _traineeRepository.GetAll().Where(x => x.Id != traineeDto.Id);
-
+            // Валидацию можно вынести в отдельный класс, это удобно сделать с FluentValidation
             if (trainee == null)
                 throw new ArgumentNullException("Стажер не существует");
             if (traineeDto.Phone != null && trainees.Any(x => x.Phone == traineeDto.Phone))
@@ -134,7 +143,7 @@ namespace BLL.Services
                     TraineeCount = trainee.Project.TraineeCount
                 }
             }).OrderBy(x => x.Id);
-
+        
         public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> GroupByProjects(
             IEnumerable<ProjectDTO> projectsDto,
             IEnumerable<TraineeDTO> traineesDto,

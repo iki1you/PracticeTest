@@ -40,6 +40,8 @@ namespace WebApi.Controllers
             };
             if (choose == StateChoose.Directions)
             {
+                // Пагинацию нужно делать на уровне бд, загрузка большой таблицы целиком будет долгой и запросто положит сервер.
+                // Фильтрации и сортировки также нужно вынести на бд.
                 var directions = _directionService.GetAll();
                 if (searchName != null)
                     directions = _directionService.FindByName(directions, searchName);
