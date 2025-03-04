@@ -1,108 +1,97 @@
-﻿using BLL.DTO;
+﻿using AutoMapper;
+using BLL.DTO;
+using BLL.Exeptions;
 using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
+using System.Linq.Expressions;
 using WebApi.Models;
 
 namespace BLL.Services
 {
     public class DirectionService: IDirectionService
     {
-        private readonly ITraineeRepository _traineeRepository;
-        private readonly IDirectionRepository _directionRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public DirectionService(ITraineeRepository traineeRepository,
-            IDirectionRepository directionRepository)
+        public DirectionService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _traineeRepository = traineeRepository;
-            _directionRepository = directionRepository;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
-        public void Create(DirectionDTO direction)
+        public async Task Create(DirectionDTO direction)
         {
-            if (_directionRepository.GetAll().Any(x => x.Name == direction.Name))
-                throw new ArgumentException("Такое направление уже существует");
-            _directionRepository.Create(new Direction
-            {
-                Name = direction.Name
-            });
+            var proj = await _unitOfWork.Directions.Retrieve(x => x.Name == direction.Name);
+            if (proj != null)
+                throw new DirectionNotFoundException("This direction already exists");
+            await _unitOfWork.Directions.Create(_mapper.Map<Direction>(direction));
+            await _unitOfWork.Save();
         }
 
-        public DirectionDTO Delete(int id)
+        public async Task<DirectionDTO> Delete(int id)
         {
-            var directionDto = Retrieve(id);
+            var directionDto = await Retrieve(id);
 
-            var trainees = _traineeRepository
-                .GetAll().Where(x => x.Direction.Id == id).Select(x => x.Name);
-            if (trainees.Any())
-                throw new ArgumentException($"Нельзя удалить, отвяжите всех стажеров от направления");
-
-            _directionRepository.Delete(id);
+            if (directionDto.Trainees.Count() > 0)
+                throw new ArgumentException($"Can`t delete, unlink all trainees from the direction");
+            
+            await _unitOfWork.Directions.Delete(_mapper.Map<Direction>(directionDto));
+            await _unitOfWork.Save();
             return directionDto;
         }
 
-        public DirectionDTO Retrieve(int id)
+        public async Task<DirectionDTO> Retrieve(int id)
         {
-            var direction = _directionRepository.Retrieve(id);
+            var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == id, "Trainees");
             if (direction == null)
-                throw new ArgumentNullException("Такое направление не существует");
-            return new DirectionDTO
-            {
-                Id = direction.Id,
-                Name = direction.Name,
-                TraineeCount = direction.TraineeCount
-            };
+                throw new DirectionNotFoundException("This direction doesn`t exist");
+            return _mapper.Map<DirectionDTO>(direction);
         }
 
-        public void Update(DirectionDTO directionDto)
+        public async Task Update(DirectionDTO directionDto)
         {
-            var direction = _directionRepository.Retrieve(directionDto.Id);
+            var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == directionDto.Id, "Trainees");
             if (direction == null)
-                throw new ArgumentNullException("Такое направление не существует");
+                throw new DirectionNotFoundException("This direction doesn`t exist");
             direction.Name = directionDto.Name;
-            direction.TraineeCount = direction.TraineeCount;
-            _directionRepository.Update(direction);
+            await _unitOfWork.Directions.Update(direction);
+            await _unitOfWork.Save();
         }
 
-        public IEnumerable<DirectionDTO> GetAll() => 
-            _directionRepository.GetAll().Select(x => new DirectionDTO
-            {
-                Id = x.Id,
-                Name = x.Name,
-                TraineeCount = x.TraineeCount
-            });
-
-
-        public IEnumerable<DirectionDTO> GetSorted(
-            IEnumerable<DirectionDTO> directionDTOs, SortingKey sortKey, bool descending)
+        public async Task<IEnumerable<DirectionDTO>> GetAll(
+            SortingKey sortKey, bool descending=false, 
+            int index=0, int size=10, string? name=null)
         {
-            var sorted = directionDTOs;
+            if (index < 0)
+                throw new ArgumentOutOfRangeException("index < 0");
+
+            Expression<Func<Direction, bool>>? predicate = null;
+            if (name != null)
+                predicate = d => d.Name == name;
+
+            Func<IQueryable<Direction>, IOrderedQueryable<Direction>>? orderBy = null;
             switch (sortKey)
             {
                 case SortingKey.Name:
-                    sorted = directionDTOs.OrderBy(x => x.Name);
+                    orderBy = q => q.OrderBy(d => d.Name);
                     break;
                 case SortingKey.TraineeCount:
-                    sorted = directionDTOs.OrderBy(x => x.TraineeCount);
+                    orderBy = q => q.OrderBy(d => d.Trainees.Count);
                     break;
                 default:
                     break;
             }
-            return descending ? sorted.Reverse() : sorted;
+
+            var directions = await _unitOfWork.Directions.GetAll(
+                "Trainees", predicate, orderBy, descending, index, size);
+            return directions.Select(x => _mapper.Map<DirectionDTO>(x));
         }
 
-        public IEnumerable<DirectionDTO> GetRange(
-            IEnumerable<DirectionDTO> directionDTOs, int index, int size)
+        public async Task<IEnumerable<DirectionDTO>> GetAll()
         {
-            if (index < 0)
-                throw new ArgumentOutOfRangeException("index < 0");
-            return directionDTOs.Skip(index * size).Take(size);
+            var directions = await _unitOfWork.Directions.GetAll("Trainees");
+            return directions.Select(x => _mapper.Map<DirectionDTO>(x));
         }
-
-        public IEnumerable<DirectionDTO> FindByName(
-            IEnumerable<DirectionDTO> directions, string name) => 
-                directions.Where(direction => direction.Name.Contains(name))
-                          .Select(direction => Retrieve(direction.Id));
-
     }
 }

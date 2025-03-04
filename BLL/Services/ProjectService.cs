@@ -1,107 +1,97 @@
-﻿using BLL.DTO;
+﻿using AutoMapper;
+using BLL.DTO;
+using BLL.Exeptions;
 using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
+using System.Globalization;
+using System.Linq.Expressions;
+using System.Xml.Linq;
 using WebApi.Models;
 
 namespace BLL.Services
 {
     public class ProjectService : IProjectService
     {
-        private readonly ITraineeRepository _traineeRepository;
-        private readonly IProjectRepository _projectRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public ProjectService(ITraineeRepository traineeRepository,
-            IDirectionRepository directionRepository,
-            IProjectRepository projectRepository)
+        public ProjectService(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _traineeRepository = traineeRepository;
-            _projectRepository = projectRepository;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
-        public void Create(ProjectDTO project)
+        public async Task Create(ProjectDTO project)
         {
-            if (_projectRepository.GetAll().Any( x => x.Name == project.Name ))
-                throw new ArgumentException("Проект с таким именем существует");
-            _projectRepository.Create(new Project {
-                Name = project.Name
-            });
+            var proj = await _unitOfWork.Projects.Retrieve(x => x.Name == project.Name, "Trainees");
+            if (proj != null)
+                throw new ProjectNotFoundException("This project already exists");
+            await _unitOfWork.Projects.Create(_mapper.Map<Project>(project));
+            await _unitOfWork.Save();
         }
 
-        public ProjectDTO Delete(int id)
+        public async Task<ProjectDTO> Delete(int id)
         {
-            var projectDto = Retrieve(id);
+            var projectDto = await Retrieve(id);
 
-            var trainees = _traineeRepository
-                .GetAll().Where(x => x.Project.Id == id);
-            if (trainees.Any())
-                throw new ArgumentException($"Нельзя удалить, отвяжите всех стажеров от проекта");
+            if (projectDto.Trainees.Count > 0)
+                throw new ArgumentException($"Can`t delete, unlink all trainees from the project");
 
-            _projectRepository.Delete(id);
+            await _unitOfWork.Projects.Delete(_mapper.Map<Project>(projectDto));
+            await _unitOfWork.Save();
             return projectDto;
         }
 
-        public ProjectDTO Retrieve(int id)
+        public async Task<ProjectDTO> Retrieve(int id)
         {
-            var project = _projectRepository.Retrieve(id);
+            var project = await _unitOfWork.Projects.Retrieve(x => x.Id == id, "Trainees");
             if (project == null)
-                throw new ArgumentNullException("Такого проекта не существует");
-            return new ProjectDTO
-            {
-                Id = project.Id,
-                Name = project.Name,
-                TraineeCount = project.TraineeCount
-            };
+                throw new ProjectNotFoundException("This project doesn`t exist");
+            return _mapper.Map<ProjectDTO>(project);
         }
 
-        public void Update(ProjectDTO projectDto)
+        public async Task Update(ProjectDTO projectDto)
         {
-            var project = _projectRepository.Retrieve(projectDto.Id);
+            var project = await _unitOfWork.Projects.Retrieve(x => x.Id == projectDto.Id, "Trainees");
             if (project == null)
-                throw new ArgumentNullException("Такого проекта не существует");
+                throw new ProjectNotFoundException("This project doesn`t exist");
             project.Name = projectDto.Name;
-            project.TraineeCount = projectDto.TraineeCount;
-            _projectRepository.Update(project);
+            await _unitOfWork.Projects.Update(project);
+            await _unitOfWork.Save();
         }
 
-        public IEnumerable<ProjectDTO> GetAll() => 
-            _projectRepository.GetAll().Select(x => new ProjectDTO
-            {
-                Id = x.Id,
-                Name = x.Name,
-                TraineeCount = x.TraineeCount
-            });
-
-
-        public IEnumerable<ProjectDTO> GetSorted(
-            IEnumerable<ProjectDTO> projectDTOs, SortingKey sortKey, bool descending)
-        {
-            var sorted = projectDTOs;
-            switch (sortKey)
-            {
-                case SortingKey.Name:
-                    sorted = projectDTOs.OrderBy(x => x.Name);
-                    break;
-                case SortingKey.TraineeCount:
-                    sorted = projectDTOs.OrderBy(x => x.TraineeCount);
-                    break;
-                default:
-                    break;
-            }
-            return descending ? sorted.Reverse() : sorted;
-        }
-
-        public IEnumerable<ProjectDTO> GetRange(
-            IEnumerable<ProjectDTO> projectDTOs, int index, int size)
+        public async Task<IEnumerable<ProjectDTO>> GetAll(
+            SortingKey sortKey, bool descending = false,
+            int index = 0, int size = 10, string? name = null)
         {
             if (index < 0)
                 throw new ArgumentOutOfRangeException("index < 0");
-            return projectDTOs.Skip(index * size).Take(size);
+
+            Expression<Func<Project, bool>>? predicate = null;
+            if (name != null)
+                predicate = d => d.Name == name;
+
+            Func<IQueryable<Project>, IOrderedQueryable<Project>>? orderBy = null;
+            switch (sortKey)
+            {
+                case SortingKey.Name:
+                    orderBy = q => q.OrderBy(d => d.Name);
+                    break;
+                case SortingKey.TraineeCount:
+                    orderBy = q => q.OrderBy(d => d.Trainees.Count);
+                    break;
+            }
+
+            var directions = await _unitOfWork.Projects.GetAll(
+                "Trainees", predicate, orderBy, descending, index, size);
+            return directions.Select(x => _mapper.Map<ProjectDTO>(x));
         }
 
-        public IEnumerable<ProjectDTO> FindByName(
-            IEnumerable<ProjectDTO> projects, string name) => projects
-                .Where(project => project.Name.Contains(name))
-                .Select(project => Retrieve(project.Id));
+        public async Task<IEnumerable<ProjectDTO>> GetAll()
+        {
+            var projects = await _unitOfWork.Projects.GetAll("Trainees");
+            return projects.Select(x => _mapper.Map<ProjectDTO>(x));
+        }
     }
 }

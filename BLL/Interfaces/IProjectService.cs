@@ -2,7 +2,7 @@
 
 namespace BLL.Interfaces
 {
-    public interface IProjectService: IFormattableService<ProjectDTO>, ICRUDableService<ProjectDTO>
+    public interface IProjectService: IBaseService<ProjectDTO>
     {
     }
 }

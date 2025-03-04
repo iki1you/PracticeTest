@@ -4,6 +4,7 @@
 namespace DAL.Models
 {
     [Microsoft.EntityFrameworkCore.Index("Email", IsUnique=true)]
+    [Microsoft.EntityFrameworkCore.Index("Phone", IsUnique=true)]
     public class Trainee
     {
         public int Id { get; set; }

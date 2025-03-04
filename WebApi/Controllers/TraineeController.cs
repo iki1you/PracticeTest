@@ -32,21 +32,21 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("/trainee-create")]
-        public ActionResult Create()
+        public async Task<ActionResult> Create()
         {
-            ViewBag.Projects = new SelectList(_projectService.GetAll(), "Id", "Name");
-            ViewBag.Directions = new SelectList(_directionService.GetAll(), "Id", "Name");
+            ViewBag.Projects = new SelectList(await _projectService.GetAll(), "Id", "Name");
+            ViewBag.Directions = new SelectList(await _directionService.GetAll(), "Id", "Name");
             return View();
         }
 
         [HttpPost]
-        public IActionResult CreateProject(CreateViewModel model)
+        public async Task<IActionResult> CreateProject(CreateViewModel model)
         {
             if (model.Project != null)
             {
                 try
                 {
-                    _projectService.Create(model.Project);
+                    await _projectService.Create(model.Project);
                     TempData["Message"] = "Проект создан";
                 }
                 catch (Exception ex)
@@ -58,13 +58,13 @@ namespace WebApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateDirection(CreateViewModel model)
+        public async Task<IActionResult> CreateDirection(CreateViewModel model)
         {
             if (model.Direction != null)
             {
                 try
                 {
-                    _directionService.Create(model.Direction);
+                    await _directionService.Create(model.Direction);
                     TempData["Message"] = "Направление создано";
                 }
                 catch (Exception ex)
@@ -86,8 +86,8 @@ namespace WebApi.Controllers
             string message = "Форма успешно отправлена";
             try
             {
-                _traineeService.Create(traineeDto);
-                trainee = _traineeService.Retrieve(_traineeService.GetAll(), traineeDto.Email);
+                await _traineeService.Create(traineeDto);
+                trainee = await _traineeService.Retrieve(traineeDto.Email);
                 traineeDto.Project = trainee.Project;
                 traineeDto.Direction = trainee.Direction;
                 traineeDto.Id = trainee.Id;
@@ -133,7 +133,7 @@ namespace WebApi.Controllers
             string message = "Форма успешно отправлена";
             try
             {
-                _traineeService.Update(traineeDto);
+                await _traineeService.Update(traineeDto);
             }
             catch (Exception ex)
             {
@@ -156,24 +156,20 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("/trainees-list")]
-        public ActionResult List(int directionId = -1, int projectId = -1)
+        public async Task<ActionResult> List(int directionId = -1, int projectId = -1)
         {
-            var trainees = _traineeService.GetAll();
-            var directions = _directionService.GetAll();
-            var projects = _projectService.GetAll();
+            var trainees = await _traineeService.GetAll();
+            var directions = await _directionService.GetAll();
+            var projects = await _projectService.GetAll();
             try
             {
                 if (directionId != -1)
                 {
-                    var direction = _directionService.Retrieve(directionId);
-                    trainees = _traineeService.FilterByDirections(trainees,
-                        new List<DirectionDTO> { direction });
+                    trainees = _traineeService.FilterByDirections(trainees, directionId);
                 }
                 if (projectId != -1)
                 {
-                    var project = _projectService.Retrieve(projectId);
-                    trainees = _traineeService.FilterByProjects(trainees,
-                        new List<ProjectDTO> { project });
+                    trainees = _traineeService.FilterByProjects(trainees, projectId);
                 }
             } catch (Exception ex)
             {

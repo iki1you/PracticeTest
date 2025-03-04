@@ -135,7 +135,7 @@
                 <input id="project_id_attach" type="hidden" name="projectId" value="" />
 
                 <select name="traineeId" id="trainee-select">
-                    @foreach (var trainee in Model.TraineesList)
+                    @foreach (var trainee in Model.Trainees)
                     {
                         <option value="@trainee.Id">@trainee.Name</option>
                     }
@@ -186,7 +186,7 @@
                 <input id="project_id_attach" type="hidden" name="directionId" value="" />
 
                 <select name="traineeId" id="trainee-select">
-                    @foreach (var trainee in Model.TraineesList)
+                    @foreach (var trainee in Model.Trainees)
                     {
                         <option value="@trainee.Id">@trainee.Name</option>
                     }
@@ -236,14 +236,14 @@
     </tr>
     @if (Model.PageListState.Choose == StateChoose.Directions)
     {
-        @foreach (var direction in Model.DirectionGroups)
+        @foreach (var direction in Model.Directions)
         {
             <tr>
-                <td>@direction.Item1.Name</td>
-                <td align="center">@direction.Item1.TraineeCount</td>
+                <td>@direction.Name</td>
+                <td align="center">@direction.Trainees.Count</td>
                 <td id="trainees">
                     <select name="trainee" id="trainee-select">
-                        @foreach (TraineeDTO trainee in direction.Item2)
+                        @foreach (TraineeDTO trainee in direction.Trainees)
                         {
                             <option value="@trainee.Id">@trainee.Name</option>
                         }
@@ -251,21 +251,21 @@
                 </td>
                 <td>
                     <button id="myBtn" onclick='projectForm(event,
-                        @(direction.Item1.Id), "@(direction.Item1.Name)", @(direction.Item1.TraineeCount))'>
+                        @(direction.Id), "@(direction.Name)", @(direction.Trainees.Count))'>
                         Изменить
                     </button>
                 </td>
             </tr>
         }
     } else {
-        @foreach (var project in Model.ProjectGroups)
+        @foreach (var project in Model.Projects)
         {
             <tr>
-                <td>@project.Item1.Name</td>
-                <td align="center">@project.Item1.TraineeCount</td>
+                <td>@project.Name</td>
+                <td align="center">@project.Trainees.Count</td>
                 <td id="trainees">
                     <select name="trainee" id="trainee-select">
-                        @foreach (TraineeDTO trainee in project.Item2)
+                        @foreach (TraineeDTO trainee in project.Trainees)
                         {
                             <option value="@trainee.Id">@trainee.Name</option>
                         }
@@ -273,7 +273,7 @@
                 </td>
                 <td>
                     <button id="myBtn" onclick='projectForm(event, 
-                        @(project.Item1.Id), "@(project.Item1.Name)", @(project.Item1.TraineeCount))'>
+                        @(project.Id), "@(project.Name)", @(project.Trainees.Count))'>
                         Изменить
                     </button>
                 </td>

@@ -1,114 +1,95 @@
-﻿using BLL.DTO;
+﻿using AutoMapper;
+using BLL.DTO;
+using BLL.Exeptions;
 using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
 using WebApi.Models;
 
 namespace BLL.Services
 {
     public class TraineeService: ITraineeService
     {
-        private readonly ITraineeRepository _traineeRepository;
-        private readonly IDirectionRepository _directionRepository;
-        private readonly IProjectRepository _projectRepository;
+        private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public TraineeService(ITraineeRepository traineeRepository,
-            IDirectionRepository directionRepository,
-            IProjectRepository projectRepository) 
+        public TraineeService(IMapper mapper, IUnitOfWork unitOfWork) 
         {
-            _traineeRepository = traineeRepository;
-            _directionRepository = directionRepository;
-            _projectRepository = projectRepository;
+            _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
 
-        public void Create(TraineeDTO traineeDto)
+        public async Task Create(TraineeDTO traineeDto)
         {
-            var direction = _directionRepository.Retrieve(traineeDto.Direction.Id);
+            var direction = _unitOfWork.Directions.Retrieve(x => x.Id == traineeDto.Direction.Id);
             if (direction == null)
-                // Текст в исключении лучше писать на английском. Исключение ArgumentNullException путает, у метода нет такого параметра.
-                // Здесь лучше создать свой тип исключения.
-                throw new ArgumentNullException("Направление не существует");
+                throw new DirectionNotFoundException("Direction doesn`t exist");
 
-            var project = _projectRepository.Retrieve(traineeDto.Project.Id);
+            var project = _unitOfWork.Projects.Retrieve(x => x.Id == traineeDto.Project.Id);
             if (project == null)
-                throw new ArgumentNullException("Проект не существует");
+                throw new ProjectNotFoundException("Project doesn`t exist");
 
             if (!new PhoneAttribute().IsValid(traineeDto.Phone))
-                throw new ValidationException("Неправильный формат номера телефона");
+                throw new ValidationException("Wrong phone number format");
+
             // Обязательно вынести проверку дубликата в бд.
             // Очень затратно загружать всю таблицу целиком, тем более синхронно, после чего перебирать все элементы без индекса.
             // При большом размере таблиы текущее решение упадет, съест всю оперативку и будет тормозить вообще весь сервер.
-            if (traineeDto.Phone != null && _traineeRepository.GetAll().Any(x => x.Phone == traineeDto.Phone))
-                throw new ArgumentException("Стажер с таким номером телефона уже существует");
+            if ((traineeDto.Phone != null) &&
+                (_unitOfWork.Trainees.Retrieve(x => x.Phone == traineeDto.Phone).Result != null) )
+                throw new ArgumentException("Trainee with this phone number already exists");
 
             if (!new EmailAddressAttribute().IsValid(traineeDto.Email))
-                throw new ValidationException("Неправильный формат email");
+                throw new ValidationException("Wrong email format");
 
-            if (_traineeRepository.Retrieve(traineeDto.Email) != null)
-                throw new ArgumentException("Стажер с таким email уже существует");
-            // При вызове метода Retrieve и сохранении данных в Create неочевидно использование ChangeTracker-а.
-            // Нужно использовать CollectionNavigation https://learn.microsoft.com/en-us/ef/core/modeling/relationships/navigations#collection-navigations
-            // и не обновлять значения TraineeCount вручную. Это замечание обязательно исправить.
-            project.TraineeCount += 1;
-            direction.TraineeCount += 1;
-            // Здесь лучше использовать маппер, зачем нужен GenderDTO?
-            _traineeRepository.Create(new Trainee
-            {
-                Name = traineeDto.Name,
-                Surname = traineeDto.Surname,
-                Gender = (Gender)traineeDto.Gender,
-                Email = traineeDto.Email,
-                Phone = traineeDto.Phone,
-                BirthDay = traineeDto.BirthDay,
-                Direction = direction,
-                Project = project
-            });
+            if (_unitOfWork.Trainees.Retrieve(x => x.Email == traineeDto.Email) != null)
+                throw new ArgumentException("Trainee with this email already exists");
+
+            await _unitOfWork.Trainees.Create(_mapper.Map<Trainee>(traineeDto));
+            await _unitOfWork.Save();
         }
 
-        public void AttachDirection(TraineeDTO traineeDto, DirectionDTO directionDto)
+        public async Task AttachDirection(TraineeDTO traineeDto, DirectionDTO directionDto)
         {
-            var trainee = _traineeRepository.Retrieve(traineeDto.Id);
+            var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Id == traineeDto.Id);
             if (trainee == null) 
-                throw new ArgumentNullException($"Стажера {traineeDto.Id} не существует");
-            var direction = _directionRepository.Retrieve(directionDto.Id);
+                throw new ArgumentNullException($"Trainee {traineeDto.Id} doesn`t exist");
+            var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == directionDto.Id);
             if (direction == null)
-                throw new ArgumentException($"Стажера {directionDto.Id} не существует");
-
-            trainee.Direction.TraineeCount -= 1;
+                throw new DirectionNotFoundException($"Direction {directionDto.Id} doesn`t exist");
             trainee.Direction = direction;
-            direction.TraineeCount += 1;
-            _traineeRepository.Update(trainee);
-            _directionRepository.Update(direction);
+            await _unitOfWork.Trainees.Update(trainee);
+            await _unitOfWork.Directions.Update(direction);
+            await _unitOfWork.Save();
         }
 
-        public void AttachProject(TraineeDTO traineeDto, ProjectDTO projectDto)
+        public async Task AttachProject(TraineeDTO traineeDto, ProjectDTO projectDto)
         {
-            var trainee = _traineeRepository.Retrieve(traineeDto.Id);
+            var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Id == traineeDto.Id);
             if (trainee == null) 
-                throw new ArgumentNullException($"Стажера {traineeDto.Id} не существует");
-            var project = _projectRepository.Retrieve(projectDto.Id);
+                throw new ArgumentNullException($"Trainee {traineeDto.Id} doesn`t exist");
+            var project = await _unitOfWork.Projects.Retrieve(x => x.Id == projectDto.Id);
             if (project == null)
-                throw new ArgumentException($"Проекта {projectDto.Id} не существует");
-
-            trainee.Project.TraineeCount -= 1;
+                throw new ProjectNotFoundException($"Project {projectDto.Id} doesn`t exist");
             trainee.Project = project;
-            project.TraineeCount += 1;
-            _traineeRepository.Update(trainee);
-            _projectRepository.Update(project);
+            await _unitOfWork.Trainees.Update(trainee);
+            await _unitOfWork.Projects.Update(project);
+            await _unitOfWork.Save();
         }
 
-        public void Update(TraineeDTO traineeDto)
+        public async Task Update(TraineeDTO traineeDto)
         {
-            var trainee = _traineeRepository.Retrieve(traineeDto.Id);
-            var trainees = _traineeRepository.GetAll().Where(x => x.Id != traineeDto.Id);
+            var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Id == traineeDto.Id);
+            var trainees = await _unitOfWork.Trainees.GetAll("", x => x.Id != traineeDto.Id);
             // Валидацию можно вынести в отдельный класс, это удобно сделать с FluentValidation
             if (trainee == null)
-                throw new ArgumentNullException("Стажер не существует");
+                throw new NullReferenceException("Trainee doesn`t exist");
             if (traineeDto.Phone != null && trainees.Any(x => x.Phone == traineeDto.Phone))
-                throw new ArgumentException("Стажер с таким номером телефона уже существует");
+                throw new ArgumentException("Trainee with this phone number already exists");
             if (trainees.Any(x => x.Email == traineeDto.Email))
-                throw new ArgumentException("Стажер с таким email уже существует");
+                throw new ArgumentException("Trainee with this email number already exists");
 
             trainee.Name = traineeDto.Name;
             trainee.Surname = traineeDto.Surname;
@@ -116,74 +97,65 @@ namespace BLL.Services
             trainee.Email = traineeDto.Email;
             trainee.BirthDay = traineeDto.BirthDay;
             trainee.Phone = traineeDto.Phone;
-            _traineeRepository.Update(trainee);
+            await _unitOfWork.Trainees.Update(trainee);
+            await _unitOfWork.Save();
         }
 
-        public IEnumerable<TraineeDTO> GetAll() => 
-            _traineeRepository.GetAll()
-            .Select(trainee => new TraineeDTO
-            {
-                Id = trainee.Id,
-                Name = trainee.Name,
-                Surname = trainee.Surname,
-                Gender = (GenderDTO)trainee.Gender,
-                Email = trainee.Email,
-                Phone = trainee.Phone,
-                BirthDay = trainee.BirthDay,
-                Direction = new DirectionDTO
-                {
-                    Id = trainee.Direction.Id,
-                    Name = trainee.Direction.Name,
-                    TraineeCount = trainee.Direction.TraineeCount
-                },
-                Project = new ProjectDTO
-                {
-                    Id = trainee.Project.Id,
-                    Name = trainee.Project.Name,
-                    TraineeCount = trainee.Project.TraineeCount
-                }
-            }).OrderBy(x => x.Id);
-        
-        public IEnumerable<(ProjectDTO, IEnumerable<TraineeDTO>)> GroupByProjects(
-            IEnumerable<ProjectDTO> projectsDto,
-            IEnumerable<TraineeDTO> traineesDto,
-            SortingKey sortKey, bool descending) => projectsDto
-                .Select(project => (project, traineesDto.Where(trainee => trainee.Project.Id == project.Id)));
+        public async Task<IEnumerable<TraineeDTO>> GetAll(
+            SortingKey sortKey, bool descending = false,
+            int index = 0, int size = 10, string? name = null)
+        {
+            if (index < 0)
+                throw new ArgumentOutOfRangeException("index < 0");
 
-        public IEnumerable<(DirectionDTO, IEnumerable<TraineeDTO>)> GroupByDirections(
-            IEnumerable<DirectionDTO> directionsDto, 
-            IEnumerable<TraineeDTO> traineesDto, 
-            SortingKey sortKey, bool descending) => directionsDto
-                .Select(direction => (direction, traineesDto.Where(trainee => trainee.Direction.Id == direction.Id)));
+            Expression<Func<Trainee, bool>>? predicate = null;
+            if (name != null)
+                predicate = d => d.Name == name;
+
+
+            var directions = await _unitOfWork.Trainees.GetAll(
+                "", predicate, orderBy: null, descending, index, size);
+            return directions.Select(x => _mapper.Map<TraineeDTO>(x));
+        }
+
+        public async Task<TraineeDTO> Retrieve(int id)
+        {
+            var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Id == id, "Direction,Project");
+            if (trainee == null)
+                throw new NullReferenceException("Trainee not found");
+            return _mapper.Map<TraineeDTO>(trainee);
+        }
+
+        public async Task<TraineeDTO> Retrieve(string email)
+        {
+            var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Email == email, "Direction,Project");
+            if (trainee == null)
+                throw new NullReferenceException("Trainee not found");
+            return _mapper.Map<TraineeDTO>(trainee);
+        }
 
         public IEnumerable<TraineeDTO> FilterByDirections(
-            IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<DirectionDTO> directions)
+            IEnumerable<TraineeDTO> traineeDTOs, int directionId)
         {
-            var ids = directions.Select(x => x.Id);
-            return traineeDTOs.Where(x => ids.Contains(x.Direction.Id));
+            return traineeDTOs.Where(x => x.Direction.Id == directionId);
         }
 
         public IEnumerable<TraineeDTO> FilterByProjects(
-            IEnumerable<TraineeDTO> traineeDTOs, IEnumerable<ProjectDTO> projects)
+            IEnumerable<TraineeDTO> traineeDTOs, int projectId)
         {
-            var ids = projects.Select(x => x.Id);
-            return traineeDTOs.Where(x => ids.Contains(x.Project.Id));
+            return traineeDTOs.Where(x => x.Project.Id == projectId);
         }
 
-        public TraineeDTO Retrieve(IEnumerable<TraineeDTO> items, int id)
+        public Task<TraineeDTO> Delete(int id)
         {
-            var trainee = items.First(x => x.Id == id);
-            if (trainee == null)
-                throw new NullReferenceException("Стажер не найден");
-            return trainee;
+            throw new NotImplementedException();
         }
 
-        public TraineeDTO Retrieve(IEnumerable<TraineeDTO> items, string email)
+        public async Task<IEnumerable<TraineeDTO>> GetAll()
         {
-            var trainee = items.First(x => x.Email == email);
-            if (trainee == null)
-                throw new NullReferenceException("Стажер не найден");
-            return trainee;
+            var trainees = await _unitOfWork.Trainees.GetAll(
+                "Project,Direction", null, q => q.OrderBy(x => x.Id), false, 0, 100);
+            return trainees.Select(x => _mapper.Map<TraineeDTO>(x));
         }
     }
 }

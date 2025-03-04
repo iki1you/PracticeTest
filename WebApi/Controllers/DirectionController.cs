@@ -22,19 +22,18 @@ namespace WebApi.Controllers
             _hubContext = hubContext;
         }
 
-        public IActionResult Edit(
-            int directionId, string directionName, int directionTrainees,
+        public async Task<IActionResult> Edit(
+            int directionId, string directionName,
             int index, StateChoose choose, bool descending, int pageSize)
         {
             var directionDto = new DirectionDTO
             {
                 Id = directionId,
                 Name = directionName,
-                TraineeCount = directionTrainees
             };
             try
             {
-                _directionService.Update(directionDto);
+                await _directionService.Update(directionDto);
             }
             catch (Exception ex)
             {
@@ -44,12 +43,12 @@ namespace WebApi.Controllers
                 new { index, choose, descending, pageSize });
         }
 
-        public IActionResult Delete(int directionId, 
+        public async Task<IActionResult> Delete(int directionId, 
             int index, StateChoose choose, bool descending, int pageSize)
         {
             try
             {
-                _directionService.Delete(directionId);
+                await _directionService.Delete(directionId);
             }
             catch (Exception ex)
             {
@@ -65,9 +64,9 @@ namespace WebApi.Controllers
         {
             try
             {
-                var trainee = _traineeService.Retrieve(_traineeService.GetAll(), traineeId);
-                var direction = _directionService.Retrieve(directionId);
-                _traineeService.AttachDirection(trainee, direction);
+                var trainee = await _traineeService.Retrieve(traineeId);
+                var direction = await _directionService.Retrieve(directionId);
+                await _traineeService.AttachDirection(trainee, direction);
                 var notification = new Dictionary<string, string>
                 {
                     { "id", trainee.Id.ToString() },

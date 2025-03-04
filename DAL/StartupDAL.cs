@@ -8,9 +8,7 @@ namespace DAL
     {
         public static void Configure(IServiceCollection services)
         {
-            services.AddScoped<ITraineeRepository, TraineeRepository>();
-            services.AddScoped<IDirectionRepository, DirectionRepository>();
-            services.AddScoped<IProjectRepository, ProjectRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
         }
     }
 }

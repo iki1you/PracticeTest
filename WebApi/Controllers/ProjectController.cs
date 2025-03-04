@@ -29,8 +29,7 @@ namespace WebApi.Controllers
             var projectDto = new ProjectDTO
             {
                 Id = projectId,
-                Name = projectName,
-                TraineeCount = projectTrainees
+                Name = projectName
             };
             // Можно вынести в глобальный обработчик ошибок
             try
@@ -45,13 +44,13 @@ namespace WebApi.Controllers
                 new { index, choose, descending, pageSize });
         }
 
-        public IActionResult Delete(
+        public async Task<IActionResult> Delete(
             int projectId, int index, StateChoose choose, 
             bool descending, int pageSize)
         {
             try
             {
-                _projectService.Delete(projectId);
+                await _projectService.Delete(projectId);
             }
             catch (Exception ex)
             {
@@ -66,9 +65,9 @@ namespace WebApi.Controllers
         {
             try
             {
-                var trainee = _traineeService.Retrieve(_traineeService.GetAll(), traineeId);
-                var project = _projectService.Retrieve(projectId);
-                _traineeService.AttachProject(trainee, project);
+                var trainee = await _traineeService.Retrieve(traineeId);
+                var project = await _projectService.Retrieve(projectId);
+                await _traineeService.AttachProject(trainee, project);
                 // Для уведомления нужно использовать DTO и маппер
                 var notification = new Dictionary<string, string>
                 {

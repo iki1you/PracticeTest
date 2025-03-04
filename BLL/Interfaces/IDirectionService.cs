@@ -1,8 +1,9 @@
 ﻿using BLL.DTO;
+using WebApi.Models;
 
 namespace BLL.Interfaces
 {
-    public interface IDirectionService: IFormattableService<DirectionDTO>, ICRUDableService<DirectionDTO>
+    public interface IDirectionService: IBaseService<DirectionDTO>
     {
     }
 }
