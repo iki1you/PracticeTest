@@ -17,7 +17,7 @@ namespace DAL.Repositories
             _dbSet = context.Set<TEntity>();
         }
 
-        public async Task<IEnumerable<TEntity>> GetAll(
+        public async Task<(IEnumerable<TEntity>, int)> GetAll(
             string includeProperties,
             Expression<Func<TEntity, bool>>? predicate = null,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
@@ -25,7 +25,7 @@ namespace DAL.Repositories
             int page = 0, int pageSize = 10)
         {
             IQueryable<TEntity> query = _dbSet;
-
+            
             foreach (var property in includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 query = query.Include(property);
 
@@ -38,9 +38,10 @@ namespace DAL.Repositories
             if (descending)
                 query = query.Reverse();
 
+            int countPages = (int)Math.Ceiling((query.Count() * 1.0) / pageSize);
             query = query.Skip(page * pageSize).Take(pageSize);
 
-            return await query.ToListAsync();
+            return (await query.ToListAsync(), countPages);
         }
 
         public async Task<TEntity?> Retrieve(Expression<Func<TEntity, bool>> predicate,

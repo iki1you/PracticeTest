@@ -1,4 +1,5 @@
-﻿using BLL.DTO;
+﻿using AutoMapper;
+using BLL.DTO;
 using BLL.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -12,17 +13,20 @@ namespace WebApi.Controllers
         private readonly IProjectService _projectService;
         private readonly ITraineeService _traineeService;
         private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly IMapper _mapper;
         public ProjectController(
             IProjectService projectService,
             ITraineeService traineeService,
-            IHubContext<NotificationHub> hubContext)
+            IHubContext<NotificationHub> hubContext,
+            IMapper mapper)
         {
             _projectService = projectService;
             _traineeService = traineeService;
             _hubContext = hubContext;
+            _mapper = mapper;
         }
 
-        public IActionResult Edit(
+        public async Task<IActionResult> Edit(
             int projectId, string projectName, int projectTrainees,
             int index, StateChoose choose, bool descending, int pageSize)
         {
@@ -31,10 +35,9 @@ namespace WebApi.Controllers
                 Id = projectId,
                 Name = projectName
             };
-            // Можно вынести в глобальный обработчик ошибок
             try
             {
-                _projectService.Update(projectDto);
+                await _projectService.Update(projectDto);
             }
             catch (Exception ex)
             {
@@ -68,19 +71,8 @@ namespace WebApi.Controllers
                 var trainee = await _traineeService.Retrieve(traineeId);
                 var project = await _projectService.Retrieve(projectId);
                 await _traineeService.AttachProject(trainee, project);
-                // Для уведомления нужно использовать DTO и маппер
-                var notification = new Dictionary<string, string>
-                {
-                    { "id", trainee.Id.ToString() },
-                    { "name", trainee.Name },
-                    { "surname", trainee.Surname },
-                    { "gender", trainee.Gender.ToString() },
-                    { "email", trainee.Email },
-                    { "phone", trainee.Phone ?? "" },
-                    { "birthday", trainee.BirthDay.ToString("dd.MM.yyyy") },
-                    { "project", project.Name },
-                    { "direction", trainee.Project.Name }
-                };
+                trainee.Project = project;
+                var notification = _mapper.Map<Dictionary<string, string>>(trainee);
                 await _hubContext.Clients.All.SendAsync("ReceiveEdit", notification);
             }
             catch (Exception ex)

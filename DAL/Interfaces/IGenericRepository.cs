@@ -12,7 +12,7 @@ namespace DAL.Interfaces
         public Task Create(TEntity item);
         public Task<TEntity?> Retrieve(
             Expression<Func<TEntity, bool>> predicate, string? includeProperties);
-        public Task<IEnumerable<TEntity>> GetAll(
+        public Task<(IEnumerable<TEntity>, int)> GetAll(
            string includeProperties,
            Expression<Func<TEntity, bool>>? predicate,
            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy,

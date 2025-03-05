@@ -1,4 +1,5 @@
-﻿using BLL.DTO;
+﻿using AutoMapper;
+using BLL.DTO;
 using BLL.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -16,11 +17,13 @@ namespace WebApi.Controllers
         private readonly IDirectionService _directionService;
         private readonly ILogger<HomeController> _logger;
         private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly IMapper _mapper;
         public TraineeController(ITraineeService traineeService, 
             IProjectService projectService, 
             IDirectionService directionService,
             ILogger<HomeController> logger,
-            IHubContext<NotificationHub> hubContext
+            IHubContext<NotificationHub> hubContext,
+            IMapper mapper
             )
         {
             _traineeService = traineeService;
@@ -28,6 +31,7 @@ namespace WebApi.Controllers
             _directionService = directionService;
             _logger = logger;
             _hubContext = hubContext;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -79,37 +83,28 @@ namespace WebApi.Controllers
         [Route("/trainee-create")]
         public async Task<ActionResult> CreateAsync(CreateViewModel model)
         {
-            var traineeDto = model.Trainee;
-            traineeDto.Project = model.Project;
-            traineeDto.Direction = model.Direction;
-            TraineeDTO trainee;
             string message = "Форма успешно отправлена";
             try
             {
+                var traineeDto = model.Trainee;
+
+                TraineeDTO trainee;
+                traineeDto.Project = model.Project;
+                traineeDto.Direction = model.Direction;
                 await _traineeService.Create(traineeDto);
                 trainee = await _traineeService.Retrieve(traineeDto.Email);
                 traineeDto.Project = trainee.Project;
                 traineeDto.Direction = trainee.Direction;
                 traineeDto.Id = trainee.Id;
+                TempData["Message"] = message;
+
+                var notification = _mapper.Map<Dictionary<string, string>>(traineeDto);
+                await _hubContext.Clients.All.SendAsync("ReceiveCreate", notification);
             }
             catch (Exception ex)
             {
                 message = ex.Message;
             }
-            TempData["Message"] = message;
-            var notification = new Dictionary<string, string>
-            {
-                { "id", traineeDto.Id.ToString() },
-                { "name", traineeDto.Name },
-                { "surname", traineeDto.Surname },
-                { "gender", traineeDto.Gender.ToString() },
-                { "email", traineeDto.Email },
-                { "phone", traineeDto.Phone ?? "" },
-                { "birthday", traineeDto.BirthDay.ToString("dd.MM.yyyy") },
-                { "project", traineeDto.Project.Name },
-                { "direction", traineeDto.Direction.Name }
-            };
-            await _hubContext.Clients.All.SendAsync("ReceiveCreate", notification);
             return RedirectToAction("Create");
         }
 
@@ -134,23 +129,15 @@ namespace WebApi.Controllers
             try
             {
                 await _traineeService.Update(traineeDto);
+                TempData["Message"] = message;
+                var notification = _mapper.Map<Dictionary<string, string>>(
+                    await _traineeService.Retrieve(traineeDto.Id));
+                await _hubContext.Clients.All.SendAsync("ReceiveEdit", notification);
             }
             catch (Exception ex)
             {
                 message = ex.Message;
             }
-            TempData["Message"] = message;
-            var notification = new Dictionary<string, string>
-            {
-                { "id", traineeDto.Id.ToString() },
-                { "name", traineeDto.Name },
-                { "surname", traineeDto.Surname },
-                { "gender", traineeDto.Gender.ToString() },
-                { "email", traineeDto.Email },
-                { "phone", traineeDto.Phone },
-                { "birthday", traineeDto.BirthDay.ToString("dd.MM.yyyy") }
-            };
-            await _hubContext.Clients.All.SendAsync("ReceiveEdit", notification);
             return RedirectToAction("List");
         }
 

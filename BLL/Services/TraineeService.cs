@@ -2,9 +2,11 @@
 using BLL.DTO;
 using BLL.Exeptions;
 using BLL.Interfaces;
+using BLL.Validators;
 using DAL.Interfaces;
 using DAL.Models;
-using System.ComponentModel.DataAnnotations;
+using FluentValidation;
+using FluentValidation.Results;
 using System.Linq.Expressions;
 using WebApi.Models;
 
@@ -23,31 +25,16 @@ namespace BLL.Services
 
         public async Task Create(TraineeDTO traineeDto)
         {
-            var direction = _unitOfWork.Directions.Retrieve(x => x.Id == traineeDto.Direction.Id);
-            if (direction == null)
-                throw new DirectionNotFoundException("Direction doesn`t exist");
-
-            var project = _unitOfWork.Projects.Retrieve(x => x.Id == traineeDto.Project.Id);
-            if (project == null)
-                throw new ProjectNotFoundException("Project doesn`t exist");
-
-            if (!new PhoneAttribute().IsValid(traineeDto.Phone))
-                throw new ValidationException("Wrong phone number format");
-
-            // Обязательно вынести проверку дубликата в бд.
-            // Очень затратно загружать всю таблицу целиком, тем более синхронно, после чего перебирать все элементы без индекса.
-            // При большом размере таблиы текущее решение упадет, съест всю оперативку и будет тормозить вообще весь сервер.
-            if ((traineeDto.Phone != null) &&
-                (_unitOfWork.Trainees.Retrieve(x => x.Phone == traineeDto.Phone).Result != null) )
-                throw new ArgumentException("Trainee with this phone number already exists");
-
-            if (!new EmailAddressAttribute().IsValid(traineeDto.Email))
-                throw new ValidationException("Wrong email format");
-
-            if (_unitOfWork.Trainees.Retrieve(x => x.Email == traineeDto.Email) != null)
-                throw new ArgumentException("Trainee with this email already exists");
-
-            await _unitOfWork.Trainees.Create(_mapper.Map<Trainee>(traineeDto));
+            var validador = new TraineeValidatorCreate(_unitOfWork);
+            ValidationResult result = await validador.ValidateAsync(traineeDto);
+            foreach (var failure in result.Errors)
+            {
+                throw new ValidationException(failure.ErrorMessage);
+            }
+            var trainee = _mapper.Map<Trainee>(traineeDto);
+            trainee.Project = await _unitOfWork.Projects.Retrieve(x => x.Id == trainee.Project.Id);
+            trainee.Direction = await _unitOfWork.Directions.Retrieve(x => x.Id == trainee.Direction.Id);
+            await _unitOfWork.Trainees.Create(trainee);
             await _unitOfWork.Save();
         }
 
@@ -82,14 +69,13 @@ namespace BLL.Services
         public async Task Update(TraineeDTO traineeDto)
         {
             var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Id == traineeDto.Id);
-            var trainees = await _unitOfWork.Trainees.GetAll("", x => x.Id != traineeDto.Id);
-            // Валидацию можно вынести в отдельный класс, это удобно сделать с FluentValidation
-            if (trainee == null)
-                throw new NullReferenceException("Trainee doesn`t exist");
-            if (traineeDto.Phone != null && trainees.Any(x => x.Phone == traineeDto.Phone))
-                throw new ArgumentException("Trainee with this phone number already exists");
-            if (trainees.Any(x => x.Email == traineeDto.Email))
-                throw new ArgumentException("Trainee with this email number already exists");
+
+            var validador = new TraineeValidatorUpdate(_unitOfWork);
+            ValidationResult result = await validador.ValidateAsync(traineeDto);
+            foreach (var failure in result.Errors)
+            {
+                throw new ValidationException(failure.ErrorMessage);
+            }
 
             trainee.Name = traineeDto.Name;
             trainee.Surname = traineeDto.Surname;
@@ -101,7 +87,7 @@ namespace BLL.Services
             await _unitOfWork.Save();
         }
 
-        public async Task<IEnumerable<TraineeDTO>> GetAll(
+        public async Task<(IEnumerable<TraineeDTO>, int)> GetAll(
             SortingKey sortKey, bool descending = false,
             int index = 0, int size = 10, string? name = null)
         {
@@ -115,7 +101,7 @@ namespace BLL.Services
 
             var directions = await _unitOfWork.Trainees.GetAll(
                 "", predicate, orderBy: null, descending, index, size);
-            return directions.Select(x => _mapper.Map<TraineeDTO>(x));
+            return (directions.Item1.Select(x => _mapper.Map<TraineeDTO>(x)), directions.Item2);
         }
 
         public async Task<TraineeDTO> Retrieve(int id)
@@ -155,7 +141,7 @@ namespace BLL.Services
         {
             var trainees = await _unitOfWork.Trainees.GetAll(
                 "Project,Direction", null, q => q.OrderBy(x => x.Id), false, 0, 100);
-            return trainees.Select(x => _mapper.Map<TraineeDTO>(x));
+            return trainees.Item1.Select(x => _mapper.Map<TraineeDTO>(x));
         }
     }
 }

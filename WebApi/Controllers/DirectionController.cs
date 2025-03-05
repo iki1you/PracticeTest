@@ -1,4 +1,5 @@
-﻿using BLL.DTO;
+﻿using AutoMapper;
+using BLL.DTO;
 using BLL.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -12,14 +13,17 @@ namespace WebApi.Controllers
         private readonly IDirectionService _directionService;
         private readonly ITraineeService _traineeService;
         private readonly IHubContext<NotificationHub> _hubContext;
+        private readonly IMapper _mapper;
         public DirectionController(
             IDirectionService directionService,
             ITraineeService traineeService, 
-            IHubContext<NotificationHub> hubContext)
+            IHubContext<NotificationHub> hubContext,
+            IMapper mapper)
         {
             _directionService = directionService;
             _traineeService = traineeService;
             _hubContext = hubContext;
+            _mapper = mapper;
         }
 
         public async Task<IActionResult> Edit(
@@ -67,18 +71,7 @@ namespace WebApi.Controllers
                 var trainee = await _traineeService.Retrieve(traineeId);
                 var direction = await _directionService.Retrieve(directionId);
                 await _traineeService.AttachDirection(trainee, direction);
-                var notification = new Dictionary<string, string>
-                {
-                    { "id", trainee.Id.ToString() },
-                    { "name", trainee.Name },
-                    { "surname", trainee.Surname },
-                    { "gender", trainee.Gender.ToString() },
-                    { "email", trainee.Email },
-                    { "phone", trainee.Phone ?? "" },
-                    { "birthday", trainee.BirthDay.ToString("dd.MM.yyyy") },
-                    { "project", trainee.Project.Name },
-                    { "direction", direction.Name }
-                };
+                var notification = _mapper.Map<Dictionary<string, string>>(trainee);
                 await _hubContext.Clients.All.SendAsync("ReceiveEdit", notification);
             }
             catch (Exception ex)

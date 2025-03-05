@@ -54,12 +54,14 @@ namespace BLL.Services
             var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == directionDto.Id, "Trainees");
             if (direction == null)
                 throw new DirectionNotFoundException("This direction doesn`t exist");
+            if (await _unitOfWork.Directions.Retrieve(x => x.Name == directionDto.Name, "Trainees") != null)
+                throw new DirectionNotFoundException("Direction with this name exists");
             direction.Name = directionDto.Name;
             await _unitOfWork.Directions.Update(direction);
             await _unitOfWork.Save();
         }
 
-        public async Task<IEnumerable<DirectionDTO>> GetAll(
+        public async Task<(IEnumerable<DirectionDTO>, int)> GetAll(
             SortingKey sortKey, bool descending=false, 
             int index=0, int size=10, string? name=null)
         {
@@ -85,13 +87,13 @@ namespace BLL.Services
 
             var directions = await _unitOfWork.Directions.GetAll(
                 "Trainees", predicate, orderBy, descending, index, size);
-            return directions.Select(x => _mapper.Map<DirectionDTO>(x));
+            return (directions.Item1.Select(x => _mapper.Map<DirectionDTO>(x)), directions.Item2);
         }
 
         public async Task<IEnumerable<DirectionDTO>> GetAll()
         {
             var directions = await _unitOfWork.Directions.GetAll("Trainees");
-            return directions.Select(x => _mapper.Map<DirectionDTO>(x));
+            return directions.Item1.Select(x => _mapper.Map<DirectionDTO>(x));
         }
     }
 }

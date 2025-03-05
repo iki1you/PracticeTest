@@ -40,10 +40,9 @@ namespace WebApi.Controllers
             var trainees = await _traineeService.GetAll();
             if (choose == StateChoose.Directions)
             {
-                // Пагинацию нужно делать на уровне бд, загрузка большой таблицы целиком будет долгой и запросто положит сервер.
-                // Фильтрации и сортировки также нужно вынести на бд.
-                var directions = await _directionService.GetAll(sortOrder, descending, index, pageSize, searchName);    
-                pageState.PageMax = (int)Math.Ceiling(1.0 * directions.Count() / pageSize);
+                var directionsGet = await _directionService.GetAll(sortOrder, descending, index, pageSize, searchName);
+                var directions = directionsGet.Item1;    
+                pageState.PageMax = directionsGet.Item2;
                 model = new ListsViewModel
                 {
                     Directions = directions,
@@ -52,8 +51,9 @@ namespace WebApi.Controllers
                 };
             } else
             {
-                var projects = await _projectService.GetAll(sortOrder, descending, index, pageSize, searchName);
-                pageState.PageMax = (int)Math.Ceiling(1.0 * projects.Count() / pageSize);
+                var projectsGet = await _projectService.GetAll(sortOrder, descending, index, pageSize, searchName);
+                var projects = projectsGet.Item1;
+                pageState.PageMax = projectsGet.Item2;
                 model = new ListsViewModel
                 {
                     Projects = projects,

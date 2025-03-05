@@ -4,9 +4,7 @@ using BLL.Exeptions;
 using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
-using System.Globalization;
 using System.Linq.Expressions;
-using System.Xml.Linq;
 using WebApi.Models;
 
 namespace BLL.Services
@@ -56,12 +54,14 @@ namespace BLL.Services
             var project = await _unitOfWork.Projects.Retrieve(x => x.Id == projectDto.Id, "Trainees");
             if (project == null)
                 throw new ProjectNotFoundException("This project doesn`t exist");
+            if (await _unitOfWork.Projects.Retrieve(x => x.Name == projectDto.Name, "Trainees") != null)
+                throw new ProjectNotFoundException("Project with this name exists");
             project.Name = projectDto.Name;
             await _unitOfWork.Projects.Update(project);
             await _unitOfWork.Save();
         }
 
-        public async Task<IEnumerable<ProjectDTO>> GetAll(
+        public async Task<(IEnumerable<ProjectDTO>, int)> GetAll(
             SortingKey sortKey, bool descending = false,
             int index = 0, int size = 10, string? name = null)
         {
@@ -85,13 +85,13 @@ namespace BLL.Services
 
             var directions = await _unitOfWork.Projects.GetAll(
                 "Trainees", predicate, orderBy, descending, index, size);
-            return directions.Select(x => _mapper.Map<ProjectDTO>(x));
+            return (directions.Item1.Select(x => _mapper.Map<ProjectDTO>(x)), directions.Item2);
         }
 
         public async Task<IEnumerable<ProjectDTO>> GetAll()
         {
             var projects = await _unitOfWork.Projects.GetAll("Trainees");
-            return projects.Select(x => _mapper.Map<ProjectDTO>(x));
+            return projects.Item1.Select(x => _mapper.Map<ProjectDTO>(x));
         }
     }
 }
