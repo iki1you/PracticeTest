@@ -4,6 +4,7 @@ using BLL.Exeptions;
 using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
+using DAL.Repositories.FuncSignatures;
 using System.Linq.Expressions;
 using WebApi.Models;
 
@@ -24,28 +25,30 @@ namespace BLL.Services
         {
             var proj = await _unitOfWork.Projects.Retrieve(x => x.Name == project.Name, "Trainees");
             if (proj != null)
-                throw new ProjectNotFoundException("This project already exists");
+                throw new DataDuplicateExeption<Project>("This project already exists");
             await _unitOfWork.Projects.Create(_mapper.Map<Project>(project));
             await _unitOfWork.Save();
         }
 
         public async Task<ProjectDTO> Delete(int id)
         {
-            var projectDto = await Retrieve(id);
+            var project = await _unitOfWork.Projects.Retrieve(x => x.Id == id, "Trainees");
 
-            if (projectDto.Trainees.Count > 0)
+            if (project == null)
+                throw new DataNotFoundExeption<Project>("This project doesn`t exist");
+            if (project.Trainees.Count() > 0)
                 throw new ArgumentException($"Can`t delete, unlink all trainees from the project");
 
-            await _unitOfWork.Projects.Delete(_mapper.Map<Project>(projectDto));
+            await _unitOfWork.Projects.Delete(project);
             await _unitOfWork.Save();
-            return projectDto;
+            return _mapper.Map<ProjectDTO>(project);
         }
 
         public async Task<ProjectDTO> Retrieve(int id)
         {
             var project = await _unitOfWork.Projects.Retrieve(x => x.Id == id, "Trainees");
             if (project == null)
-                throw new ProjectNotFoundException("This project doesn`t exist");
+                throw new DataNotFoundExeption<Project>("This project doesn`t exist");
             return _mapper.Map<ProjectDTO>(project);
         }
 
@@ -53,11 +56,10 @@ namespace BLL.Services
         {
             var project = await _unitOfWork.Projects.Retrieve(x => x.Id == projectDto.Id, "Trainees");
             if (project == null)
-                throw new ProjectNotFoundException("This project doesn`t exist");
+                throw new DataNotFoundExeption<Project>("This project doesn`t exist");
             if (await _unitOfWork.Projects.Retrieve(x => x.Name == projectDto.Name, "Trainees") != null)
-                throw new ProjectNotFoundException("Project with this name exists");
+                throw new DataDuplicateExeption<Project>("Project with this name exists");
             project.Name = projectDto.Name;
-            await _unitOfWork.Projects.Update(project);
             await _unitOfWork.Save();
         }
 
@@ -84,14 +86,15 @@ namespace BLL.Services
             }
 
             var directions = await _unitOfWork.Projects.GetAll(
-                "Trainees", predicate, orderBy, descending, index, size);
-            return (directions.Item1.Select(x => _mapper.Map<ProjectDTO>(x)), directions.Item2);
+                new GetAllParameters<Project>("Trainees", predicate, orderBy, descending, index, size));
+            return (directions.Entities.Select(x => _mapper.Map<ProjectDTO>(x)), directions.PageCount);
         }
 
         public async Task<IEnumerable<ProjectDTO>> GetAll()
         {
-            var projects = await _unitOfWork.Projects.GetAll("Trainees");
-            return projects.Item1.Select(x => _mapper.Map<ProjectDTO>(x));
+            var projects = await _unitOfWork.Projects.GetAll(
+                new GetAllParameters<Project>("Trainees", null, q => q.OrderBy(x => x.Id), false, 0, 100));
+            return projects.Entities.Select(x => _mapper.Map<ProjectDTO>(x));
         }
     }
 }

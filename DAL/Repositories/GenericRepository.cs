@@ -1,50 +1,50 @@
 ﻿using DAL.EF;
 using DAL.Interfaces;
+using DAL.Repositories.FuncSignatures;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using static System.Net.WebRequestMethods;
 
 namespace DAL.Repositories
 {
     public class GenericRepository<TEntity> : IGenericRepository<TEntity>
         where TEntity : class
     {
-        private ApplicationContext _db;
-        private DbSet<TEntity> _dbSet;
+        private readonly ApplicationContext _db;
+        private readonly DbSet<TEntity> _dbSet;
 
         public GenericRepository(ApplicationContext context)
         {
             _db = context;
             _dbSet = context.Set<TEntity>();
         }
-        // Лучше вынести параметры и кортеж в отдельные классы.
-        public async Task<(IEnumerable<TEntity>, int)> GetAll(
-            string includeProperties,
-            Expression<Func<TEntity, bool>>? predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-            bool descending = false,
-            int page = 0, int pageSize = 10)
+
+        public async Task<GetAllReturn<TEntity>> GetAll(GetAllParameters<TEntity> dataParams)
         {
             IQueryable<TEntity> query = _dbSet;
-            
-            foreach (var property in includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries))
+
+            foreach (var property in dataParams.IncludeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 query = query.Include(property);
 
-            if (predicate != null)
-                query = query.Where(predicate);
+            if (dataParams.Predicate != null)
+                query = query.Where(dataParams.Predicate);
 
-            if (orderBy != null)
-                query = orderBy(query);
+            if (dataParams.OrderBy != null)
+                query = dataParams.OrderBy(query);
 
-            if (descending)
+            if (dataParams.Descending)
                 query = query.Reverse();
-            // Этого точно не должно быть в методе GetAll. Можно вынести в метод GetWithTotal.
-            // Нужно использовать CountAsync, это тоже запрос к базе данных.
-            int countPages = (int)Math.Ceiling((query.Count() * 1.0) / pageSize);
-            query = query.Skip(page * pageSize).Take(pageSize);
 
-            return (await query.ToListAsync(), countPages);
+            var pageCount = await GetWithTotal(query, dataParams.PageSize);
+            query = query.Skip(dataParams.Page * dataParams.PageSize).Take(dataParams.PageSize);
+
+            return new GetAllReturn<TEntity>(
+                await query.ToListAsync(),
+                pageCount
+                );
         }
+
+        private static async Task<int> GetWithTotal(IQueryable<TEntity> query, int pageSize) => 
+            (int)Math.Ceiling(await query.CountAsync() * 1.0 / pageSize);
 
         public async Task<TEntity?> Retrieve(Expression<Func<TEntity, bool>> predicate,
             string? includeProperties = null)
@@ -61,21 +61,12 @@ namespace DAL.Repositories
         }
 
         public async Task Create(TEntity entity) =>
-            // https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.addasync?view=efcore-9.0
-            // This method is async only to allow special value generators, such as the one used by
-            // 'Microsoft.EntityFrameworkCore.Metadata.SqlServerValueGenerationStrategy.SequenceHiLo',
-            // to access the database asynchronously. For all other cases the non async method should be used.
-            await _dbSet.AddAsync(entity);
+            await Task.FromResult(_dbSet.Add(entity));
 
         public async Task Update(TEntity entity) =>
-            // Нужно использовать Task.FromResult.
-            // https://stackoverflow.com/questions/52146203/async-method-with-no-await-vs-task-fromresult
-            // Task.Run передает работу в пул потоков, это можно использовать для CPU bound задач.
-            // Здесь это приводит только к дополнительным накладным расходам
-            // https://habr.com/ru/articles/470830/
-            await Task.Run(() => { _db.Update(entity); });
+            await Task.FromResult(_db.Update(entity));
 
         public async Task Delete(TEntity entity) =>
-            await Task.Run(() => { _dbSet.Remove(entity); });
+            await Task.FromResult(_dbSet.Remove(entity));
     }
 }

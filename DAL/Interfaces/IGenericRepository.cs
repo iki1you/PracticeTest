@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DAL.Repositories.FuncSignatures;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,12 +13,7 @@ namespace DAL.Interfaces
         public Task Create(TEntity item);
         public Task<TEntity?> Retrieve(
             Expression<Func<TEntity, bool>> predicate, string? includeProperties);
-        public Task<(IEnumerable<TEntity>, int)> GetAll(
-           string includeProperties,
-           Expression<Func<TEntity, bool>>? predicate,
-           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy,
-           bool descending,
-           int page, int pageSize);
+        public Task<GetAllReturn<TEntity>> GetAll(GetAllParameters<TEntity> dataParams);
         public Task Delete(TEntity entity);
         public Task Update(TEntity item);
     }

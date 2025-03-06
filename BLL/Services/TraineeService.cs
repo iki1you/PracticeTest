@@ -5,6 +5,7 @@ using BLL.Interfaces;
 using BLL.Validators;
 using DAL.Interfaces;
 using DAL.Models;
+using DAL.Repositories.FuncSignatures;
 using FluentValidation;
 using FluentValidation.Results;
 using System.Linq.Expressions;
@@ -32,8 +33,8 @@ namespace BLL.Services
                 throw new ValidationException(failure.ErrorMessage);
             }
             var trainee = _mapper.Map<Trainee>(traineeDto);
-            trainee.Project = await _unitOfWork.Projects.Retrieve(x => x.Id == trainee.Project.Id);
-            trainee.Direction = await _unitOfWork.Directions.Retrieve(x => x.Id == trainee.Direction.Id);
+            trainee.Project = await _unitOfWork.Projects.Retrieve(x => x.Id == trainee.Project.Id, "Trainees");
+            trainee.Direction = await _unitOfWork.Directions.Retrieve(x => x.Id == trainee.Direction.Id, "Trainees");
             await _unitOfWork.Trainees.Create(trainee);
             await _unitOfWork.Save();
         }
@@ -42,15 +43,11 @@ namespace BLL.Services
         {
             var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Id == traineeDto.Id);
             if (trainee == null) 
-                throw new ArgumentNullException($"Trainee {traineeDto.Id} doesn`t exist");
-            var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == directionDto.Id);
+                throw new DataNotFoundExeption<Trainee>($"Trainee {traineeDto.Id} doesn`t exist");
+            var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == directionDto.Id, "Trainees");
             if (direction == null)
-                throw new DirectionNotFoundException($"Direction {directionDto.Id} doesn`t exist");
-            // Достаточно Update(trainee), но можно вообще не вызывать Update, поскольку отработает ChangeTracker.
-            // https://learn.microsoft.com/en-us/ef/core/change-tracking/
+                throw new DataNotFoundExeption<Direction>($"Direction {directionDto.Id} doesn`t exist");
             trainee.Direction = direction;
-            await _unitOfWork.Trainees.Update(trainee);
-            await _unitOfWork.Directions.Update(direction);
             await _unitOfWork.Save();
         }
 
@@ -58,13 +55,11 @@ namespace BLL.Services
         {
             var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Id == traineeDto.Id);
             if (trainee == null) 
-                throw new ArgumentNullException($"Trainee {traineeDto.Id} doesn`t exist");
-            var project = await _unitOfWork.Projects.Retrieve(x => x.Id == projectDto.Id);
+                throw new DataNotFoundExeption<Trainee>($"Trainee {traineeDto.Id} doesn`t exist");
+            var project = await _unitOfWork.Projects.Retrieve(x => x.Id == projectDto.Id, "Trainees");
             if (project == null)
-                throw new ProjectNotFoundException($"Project {projectDto.Id} doesn`t exist");
+                throw new DataNotFoundExeption<Project>($"Project {projectDto.Id} doesn`t exist");
             trainee.Project = project;
-            await _unitOfWork.Trainees.Update(trainee);
-            await _unitOfWork.Projects.Update(project);
             await _unitOfWork.Save();
         }
 
@@ -85,7 +80,6 @@ namespace BLL.Services
             trainee.Email = traineeDto.Email;
             trainee.BirthDay = traineeDto.BirthDay;
             trainee.Phone = traineeDto.Phone;
-            await _unitOfWork.Trainees.Update(trainee);
             await _unitOfWork.Save();
         }
 
@@ -100,17 +94,16 @@ namespace BLL.Services
             if (name != null)
                 predicate = d => d.Name == name;
 
-
             var directions = await _unitOfWork.Trainees.GetAll(
-                "", predicate, orderBy: null, descending, index, size);
-            return (directions.Item1.Select(x => _mapper.Map<TraineeDTO>(x)), directions.Item2);
+                new GetAllParameters<Trainee>("", predicate, orderBy: null, descending, index, size));
+            return (directions.Entities.Select(x => _mapper.Map<TraineeDTO>(x)), directions.PageCount);
         }
 
         public async Task<TraineeDTO> Retrieve(int id)
         {
             var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Id == id, "Direction,Project");
             if (trainee == null)
-                throw new NullReferenceException("Trainee not found");
+                throw new DataNotFoundExeption<Trainee>("Trainee not found");
             return _mapper.Map<TraineeDTO>(trainee);
         }
 
@@ -118,7 +111,7 @@ namespace BLL.Services
         {
             var trainee = await _unitOfWork.Trainees.Retrieve(x => x.Email == email, "Direction,Project");
             if (trainee == null)
-                throw new NullReferenceException("Trainee not found");
+                throw new DataNotFoundExeption<Trainee>("Trainee not found");
             return _mapper.Map<TraineeDTO>(trainee);
         }
 
@@ -142,8 +135,8 @@ namespace BLL.Services
         public async Task<IEnumerable<TraineeDTO>> GetAll()
         {
             var trainees = await _unitOfWork.Trainees.GetAll(
-                "Project,Direction", null, q => q.OrderBy(x => x.Id), false, 0, 100);
-            return trainees.Item1.Select(x => _mapper.Map<TraineeDTO>(x));
+                new GetAllParameters<Trainee>("Project,Direction", null, q => q.OrderBy(x => x.Id), false, 0, 100));
+            return trainees.Entities.Select(x => _mapper.Map<TraineeDTO>(x));
         }
     }
 }

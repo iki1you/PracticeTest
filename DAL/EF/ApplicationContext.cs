@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DAL.EF
 {
-    // Зачем исключать папку с миграциями из проекта?
     public class ApplicationContext: DbContext
     {
         public DbSet<Trainee> Trainees { get; set; }
@@ -14,13 +13,6 @@ namespace DAL.EF
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
             : base(options)
         {
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            // больше не нужно
-            modelBuilder.Entity<Trainee>().HasOne(p => p.Direction);
-            modelBuilder.Entity<Trainee>().HasOne(p => p.Project);
         }
     }
 }

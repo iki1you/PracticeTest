@@ -4,6 +4,7 @@ using BLL.Exeptions;
 using BLL.Interfaces;
 using DAL.Interfaces;
 using DAL.Models;
+using DAL.Repositories.FuncSignatures;
 using System.Linq.Expressions;
 using WebApi.Models;
 
@@ -22,30 +23,32 @@ namespace BLL.Services
 
         public async Task Create(DirectionDTO direction)
         {
-            var proj = await _unitOfWork.Directions.Retrieve(x => x.Name == direction.Name);
+            var proj = await _unitOfWork.Directions.Retrieve(x => x.Name == direction.Name, "Trainees");
             if (proj != null)
-                throw new DirectionNotFoundException("This direction already exists");
+                throw new DataDuplicateExeption<Direction>("This direction already exists");
             await _unitOfWork.Directions.Create(_mapper.Map<Direction>(direction));
             await _unitOfWork.Save();
         }
 
         public async Task<DirectionDTO> Delete(int id)
         {
-            var directionDto = await Retrieve(id);
+            var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == id, "Trainees");
 
-            if (directionDto.Trainees.Count() > 0)
+            if (direction == null)
+                throw new DataNotFoundExeption<Direction>("This direction doesn`t exist");
+            if (direction.Trainees.Count() > 0)
                 throw new ArgumentException($"Can`t delete, unlink all trainees from the direction");
             
-            await _unitOfWork.Directions.Delete(_mapper.Map<Direction>(directionDto));
+            await _unitOfWork.Directions.Delete(direction);
             await _unitOfWork.Save();
-            return directionDto;
+            return _mapper.Map<DirectionDTO>(direction);
         }
 
         public async Task<DirectionDTO> Retrieve(int id)
         {
             var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == id, "Trainees");
             if (direction == null)
-                throw new DirectionNotFoundException("This direction doesn`t exist");
+                throw new DataNotFoundExeption<Direction>("This direction doesn`t exist");
             return _mapper.Map<DirectionDTO>(direction);
         }
 
@@ -53,11 +56,10 @@ namespace BLL.Services
         {
             var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == directionDto.Id, "Trainees");
             if (direction == null)
-                throw new DirectionNotFoundException("This direction doesn`t exist");
+                throw new DataNotFoundExeption<Direction>("This direction doesn`t exist");
             if (await _unitOfWork.Directions.Retrieve(x => x.Name == directionDto.Name, "Trainees") != null)
-                throw new DirectionNotFoundException("Direction with this name exists");
+                throw new DataDuplicateExeption<Direction>("Direction with this name exists");
             direction.Name = directionDto.Name;
-            await _unitOfWork.Directions.Update(direction);
             await _unitOfWork.Save();
         }
 
@@ -86,14 +88,15 @@ namespace BLL.Services
             }
 
             var directions = await _unitOfWork.Directions.GetAll(
-                "Trainees", predicate, orderBy, descending, index, size);
-            return (directions.Item1.Select(x => _mapper.Map<DirectionDTO>(x)), directions.Item2);
+                new GetAllParameters<Direction>("Trainees", predicate, orderBy, descending, index, size));
+            return (directions.Entities.Select(x => _mapper.Map<DirectionDTO>(x)), directions.PageCount);
         }
 
         public async Task<IEnumerable<DirectionDTO>> GetAll()
         {
-            var directions = await _unitOfWork.Directions.GetAll("Trainees");
-            return directions.Item1.Select(x => _mapper.Map<DirectionDTO>(x));
+            var directions = await _unitOfWork.Directions.GetAll(
+                new GetAllParameters<Direction>("Trainees", null, q => q.OrderBy(x => x.Id), false, 0, 100));
+            return directions.Entities.Select(x => _mapper.Map<DirectionDTO>(x));
         }
     }
 }

@@ -9,6 +9,5 @@ namespace DAL.Interfaces
         public GenericRepository<Project> Projects { get; }
         public GenericRepository<Trainee> Trainees { get; }
         public Task Save();
-        public Task Dispose();
     }
 }

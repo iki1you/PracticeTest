@@ -103,7 +103,7 @@ namespace WebApi.Controllers
             }
             catch (Exception ex)
             {
-                message = ex.Message;
+                TempData["Message"] = ex.Message;
             }
             return RedirectToAction("Create");
         }
@@ -136,7 +136,7 @@ namespace WebApi.Controllers
             }
             catch (Exception ex)
             {
-                message = ex.Message;
+                TempData["Message"] = ex.Message;
             }
             return RedirectToAction("List");
         }
