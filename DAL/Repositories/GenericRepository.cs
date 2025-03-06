@@ -60,13 +60,13 @@ namespace DAL.Repositories
             return await query.FirstOrDefaultAsync(predicate);
         }
 
-        public async Task Create(TEntity entity) =>
-            await Task.FromResult(_dbSet.Add(entity));
+        public Task Create(TEntity entity) => 
+            Task.FromResult(_dbSet.Add(entity));
 
-        public async Task Update(TEntity entity) =>
-            await Task.FromResult(_db.Update(entity));
+        public Task Update(TEntity entity) => 
+            Task.FromResult(_db.Update(entity));
 
-        public async Task Delete(TEntity entity) =>
-            await Task.FromResult(_dbSet.Remove(entity));
+        public Task Delete(TEntity entity) => 
+            Task.FromResult(_dbSet.Remove(entity));
     }
 }

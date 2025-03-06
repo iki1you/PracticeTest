@@ -26,8 +26,8 @@ namespace BLL.Validators
                     await unitOfWork.Trainees.Retrieve(x => x.Email == trainee.Email) == null
             ).WithMessage("Trainee with this email already exists");
             RuleFor(trainee => trainee).MustAsync(
-                async (trainee, cancellation) =>
-                    await unitOfWork.Trainees.Retrieve(x => x.Phone == trainee.Phone) == null
+                async (trainee, cancellation) => ( trainee.Phone == null ||
+                    await unitOfWork.Trainees.Retrieve(x => x.Phone == trainee.Phone) == null)
             ).WithMessage("Trainee with this phone already exists");
 
         }
