@@ -2,6 +2,7 @@
 using DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using static System.Net.WebRequestMethods;
 
 namespace DAL.Repositories
 {
@@ -16,7 +17,7 @@ namespace DAL.Repositories
             _db = context;
             _dbSet = context.Set<TEntity>();
         }
-
+        // Лучше вынести параметры и кортеж в отдельные классы.
         public async Task<(IEnumerable<TEntity>, int)> GetAll(
             string includeProperties,
             Expression<Func<TEntity, bool>>? predicate = null,
@@ -37,7 +38,8 @@ namespace DAL.Repositories
 
             if (descending)
                 query = query.Reverse();
-
+            // Этого точно не должно быть в методе GetAll. Можно вынести в метод GetWithTotal.
+            // Нужно использовать CountAsync, это тоже запрос к базе данных.
             int countPages = (int)Math.Ceiling((query.Count() * 1.0) / pageSize);
             query = query.Skip(page * pageSize).Take(pageSize);
 
@@ -58,10 +60,19 @@ namespace DAL.Repositories
             return await query.FirstOrDefaultAsync(predicate);
         }
 
-        public async Task Create(TEntity entity) => 
+        public async Task Create(TEntity entity) =>
+            // https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.addasync?view=efcore-9.0
+            // This method is async only to allow special value generators, such as the one used by
+            // 'Microsoft.EntityFrameworkCore.Metadata.SqlServerValueGenerationStrategy.SequenceHiLo',
+            // to access the database asynchronously. For all other cases the non async method should be used.
             await _dbSet.AddAsync(entity);
 
-        public async Task Update(TEntity entity) => 
+        public async Task Update(TEntity entity) =>
+            // Нужно использовать Task.FromResult.
+            // https://stackoverflow.com/questions/52146203/async-method-with-no-await-vs-task-fromresult
+            // Task.Run передает работу в пул потоков, это можно использовать для CPU bound задач.
+            // Здесь это приводит только к дополнительным накладным расходам
+            // https://habr.com/ru/articles/470830/
             await Task.Run(() => { _db.Update(entity); });
 
         public async Task Delete(TEntity entity) =>

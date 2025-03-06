@@ -46,6 +46,8 @@ namespace BLL.Services
             var direction = await _unitOfWork.Directions.Retrieve(x => x.Id == directionDto.Id);
             if (direction == null)
                 throw new DirectionNotFoundException($"Direction {directionDto.Id} doesn`t exist");
+            // Достаточно Update(trainee), но можно вообще не вызывать Update, поскольку отработает ChangeTracker.
+            // https://learn.microsoft.com/en-us/ef/core/change-tracking/
             trainee.Direction = direction;
             await _unitOfWork.Trainees.Update(trainee);
             await _unitOfWork.Directions.Update(direction);

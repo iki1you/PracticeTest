@@ -4,6 +4,10 @@ using DAL.Models;
 
 namespace DAL.Repositories
 {
+    // Паттерн Dispose без IDisposable
+    // https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-dispose
+    // If your class has an IDisposable field or property but doesn't own it, meaning the class doesn't create the object,
+    // then the class doesn't need to implement IDisposable.
     public class UnitOfWork(ApplicationContext context) : IUnitOfWork
     {
         private ApplicationContext _context = context;
