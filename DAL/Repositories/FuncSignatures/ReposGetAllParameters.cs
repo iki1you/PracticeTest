@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DAL.Repositories.FuncSignatures
 {
-    public class GetAllParameters<TEntity>
+    public class ReposGetAllParameters<TEntity> where TEntity : class
     {
         public string IncludeProperties = "";
         public Expression<Func<TEntity, bool>>? Predicate = null;
@@ -16,7 +16,7 @@ namespace DAL.Repositories.FuncSignatures
         public int Page = 0;
         public int PageSize = 10;
 
-        public GetAllParameters(
+        public ReposGetAllParameters(
             string includeProperties,
             Expression<Func<TEntity, bool>>? predicate,
             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy,

@@ -2,6 +2,7 @@
 using BLL.DTO;
 using BLL.Exeptions;
 using BLL.Interfaces;
+using BLL.Services.FuncSignatures;
 using DAL.Interfaces;
 using DAL.Models;
 using DAL.Repositories.FuncSignatures;
@@ -63,19 +64,18 @@ namespace BLL.Services
             await _unitOfWork.Save();
         }
 
-        public async Task<(IEnumerable<ProjectDTO>, int)> GetAll(
-            SortingKey sortKey, bool descending = false,
-            int index = 0, int size = 10, string? name = null)
+        public async Task<ServicesGetAllReturn<ProjectDTO>> GetAll(
+            ServicesGetAllParameters<ProjectDTO> dataParams)
         {
-            if (index < 0)
+            if (dataParams.Index < 0)
                 throw new ArgumentOutOfRangeException("index < 0");
 
             Expression<Func<Project, bool>>? predicate = null;
-            if (name != null)
-                predicate = d => d.Name == name;
+            if (dataParams.Name != null)
+                predicate = d => d.Name == dataParams.Name;
 
             Func<IQueryable<Project>, IOrderedQueryable<Project>>? orderBy = null;
-            switch (sortKey)
+            switch (dataParams.SortKey)
             {
                 case SortingKey.Name:
                     orderBy = q => q.OrderBy(d => d.Name);
@@ -86,14 +86,18 @@ namespace BLL.Services
             }
 
             var directions = await _unitOfWork.Projects.GetAll(
-                new GetAllParameters<Project>("Trainees", predicate, orderBy, descending, index, size));
-            return (directions.Entities.Select(x => _mapper.Map<ProjectDTO>(x)), directions.PageCount);
+                new ReposGetAllParameters<Project>(
+                    "Trainees", predicate, orderBy, dataParams.Descending, dataParams.Index, dataParams.Size
+                    ));
+
+            return new ServicesGetAllReturn<ProjectDTO>(
+                directions.Entities.Select(x => _mapper.Map<ProjectDTO>(x)), directions.PageCount);
         }
 
         public async Task<IEnumerable<ProjectDTO>> GetAll()
         {
             var projects = await _unitOfWork.Projects.GetAll(
-                new GetAllParameters<Project>("Trainees", null, q => q.OrderBy(x => x.Id), false, 0, 100));
+                new ReposGetAllParameters<Project>("Trainees", null, q => q.OrderBy(x => x.Id), false, 0, 100));
             return projects.Entities.Select(x => _mapper.Map<ProjectDTO>(x));
         }
     }

@@ -2,6 +2,7 @@
 using BLL.DTO;
 using BLL.Exeptions;
 using BLL.Interfaces;
+using BLL.Services.FuncSignatures;
 using BLL.Validators;
 using DAL.Interfaces;
 using DAL.Models;
@@ -83,20 +84,23 @@ namespace BLL.Services
             await _unitOfWork.Save();
         }
 
-        public async Task<(IEnumerable<TraineeDTO>, int)> GetAll(
-            SortingKey sortKey, bool descending = false,
-            int index = 0, int size = 10, string? name = null)
+        public async Task<ServicesGetAllReturn<TraineeDTO>> GetAll(
+            ServicesGetAllParameters<TraineeDTO> dataParams)
         {
-            if (index < 0)
+            if (dataParams.Index < 0)
                 throw new ArgumentOutOfRangeException("index < 0");
 
             Expression<Func<Trainee, bool>>? predicate = null;
-            if (name != null)
-                predicate = d => d.Name == name;
+            if (dataParams.Name != null)
+                predicate = d => d.Name == dataParams.Name;
 
             var directions = await _unitOfWork.Trainees.GetAll(
-                new GetAllParameters<Trainee>("", predicate, orderBy: null, descending, index, size));
-            return (directions.Entities.Select(x => _mapper.Map<TraineeDTO>(x)), directions.PageCount);
+                new ReposGetAllParameters<Trainee>(
+                    "", predicate, orderBy: null, dataParams.Descending, dataParams.Index, dataParams.Size
+                    ));
+
+            return new ServicesGetAllReturn<TraineeDTO>(
+                directions.Entities.Select(x => _mapper.Map<TraineeDTO>(x)), directions.PageCount);
         }
 
         public async Task<TraineeDTO> Retrieve(int id)
@@ -135,7 +139,7 @@ namespace BLL.Services
         public async Task<IEnumerable<TraineeDTO>> GetAll()
         {
             var trainees = await _unitOfWork.Trainees.GetAll(
-                new GetAllParameters<Trainee>("Project,Direction", null, q => q.OrderBy(x => x.Id), false, 0, 100));
+                new ReposGetAllParameters<Trainee>("Project,Direction", null, q => q.OrderBy(x => x.Id), false, 0, 100));
             return trainees.Entities.Select(x => _mapper.Map<TraineeDTO>(x));
         }
     }

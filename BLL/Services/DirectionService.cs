@@ -2,6 +2,7 @@
 using BLL.DTO;
 using BLL.Exeptions;
 using BLL.Interfaces;
+using BLL.Services.FuncSignatures;
 using DAL.Interfaces;
 using DAL.Models;
 using DAL.Repositories.FuncSignatures;
@@ -63,19 +64,18 @@ namespace BLL.Services
             await _unitOfWork.Save();
         }
 
-        public async Task<(IEnumerable<DirectionDTO>, int)> GetAll(
-            SortingKey sortKey, bool descending=false, 
-            int index=0, int size=10, string? name=null)
+        public async Task<ServicesGetAllReturn<DirectionDTO>> GetAll(
+            ServicesGetAllParameters<DirectionDTO> dataParams)
         {
-            if (index < 0)
+            if (dataParams.Index < 0)
                 throw new ArgumentOutOfRangeException("index < 0");
 
             Expression<Func<Direction, bool>>? predicate = null;
-            if (name != null)
-                predicate = d => d.Name == name;
+            if (dataParams.Name != null)
+                predicate = d => d.Name == dataParams.Name;
 
             Func<IQueryable<Direction>, IOrderedQueryable<Direction>>? orderBy = null;
-            switch (sortKey)
+            switch (dataParams.SortKey)
             {
                 case SortingKey.Name:
                     orderBy = q => q.OrderBy(d => d.Name);
@@ -88,14 +88,17 @@ namespace BLL.Services
             }
 
             var directions = await _unitOfWork.Directions.GetAll(
-                new GetAllParameters<Direction>("Trainees", predicate, orderBy, descending, index, size));
-            return (directions.Entities.Select(x => _mapper.Map<DirectionDTO>(x)), directions.PageCount);
+                new ReposGetAllParameters<Direction>(
+                    "Trainees", predicate, orderBy, dataParams.Descending, dataParams.Index, dataParams.Size));
+
+            return new ServicesGetAllReturn<DirectionDTO>(
+                directions.Entities.Select(x => _mapper.Map<DirectionDTO>(x)), directions.PageCount);
         }
 
         public async Task<IEnumerable<DirectionDTO>> GetAll()
         {
             var directions = await _unitOfWork.Directions.GetAll(
-                new GetAllParameters<Direction>("Trainees", null, q => q.OrderBy(x => x.Id), false, 0, 100));
+                new ReposGetAllParameters<Direction>("Trainees", null, q => q.OrderBy(x => x.Id), false, 0, 100));
             return directions.Entities.Select(x => _mapper.Map<DirectionDTO>(x));
         }
     }

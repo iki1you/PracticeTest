@@ -18,7 +18,7 @@ namespace DAL.Repositories
             _dbSet = context.Set<TEntity>();
         }
 
-        public async Task<GetAllReturn<TEntity>> GetAll(GetAllParameters<TEntity> dataParams)
+        public async Task<ReposGetAllReturn<TEntity>> GetAll(ReposGetAllParameters<TEntity> dataParams)
         {
             IQueryable<TEntity> query = _dbSet;
 
@@ -37,7 +37,7 @@ namespace DAL.Repositories
             var pageCount = await GetWithTotal(query, dataParams.PageSize);
             query = query.Skip(dataParams.Page * dataParams.PageSize).Take(dataParams.PageSize);
 
-            return new GetAllReturn<TEntity>(
+            return new ReposGetAllReturn<TEntity>(
                 await query.ToListAsync(),
                 pageCount
                 );

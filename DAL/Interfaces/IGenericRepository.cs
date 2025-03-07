@@ -13,7 +13,7 @@ namespace DAL.Interfaces
         public Task Create(TEntity item);
         public Task<TEntity?> Retrieve(
             Expression<Func<TEntity, bool>> predicate, string? includeProperties);
-        public Task<GetAllReturn<TEntity>> GetAll(GetAllParameters<TEntity> dataParams);
+        public Task<ReposGetAllReturn<TEntity>> GetAll(ReposGetAllParameters<TEntity> dataParams);
         public Task Delete(TEntity entity);
         public Task Update(TEntity item);
     }

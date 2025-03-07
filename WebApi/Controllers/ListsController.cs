@@ -1,4 +1,6 @@
-﻿using BLL.Interfaces;
+﻿using BLL.DTO;
+using BLL.Interfaces;
+using BLL.Services.FuncSignatures;
 using Microsoft.AspNetCore.Mvc;
 using WebApi.Models;
 
@@ -40,9 +42,10 @@ namespace WebApi.Controllers
             var trainees = await _traineeService.GetAll();
             if (choose == StateChoose.Directions)
             {
-                var directionsGet = await _directionService.GetAll(sortOrder, descending, index, pageSize, searchName);
-                var directions = directionsGet.Item1;    
-                pageState.PageMax = directionsGet.Item2;
+                var directionsGet = await _directionService.GetAll(
+                    new ServicesGetAllParameters<DirectionDTO>(sortOrder, descending, index, pageSize, searchName));
+                var directions = directionsGet.Entities;    
+                pageState.PageMax = directionsGet.PageCount;
                 model = new ListsViewModel
                 {
                     Directions = directions,
@@ -51,9 +54,10 @@ namespace WebApi.Controllers
                 };
             } else
             {
-                var projectsGet = await _projectService.GetAll(sortOrder, descending, index, pageSize, searchName);
-                var projects = projectsGet.Item1;
-                pageState.PageMax = projectsGet.Item2;
+                var projectsGet = await _projectService.GetAll(
+                    new ServicesGetAllParameters<ProjectDTO>(sortOrder, descending, index, pageSize, searchName));
+                var projects = projectsGet.Entities;
+                pageState.PageMax = projectsGet.PageCount;
                 model = new ListsViewModel
                 {
                     Projects = projects,
